@@ -1,94 +1,55 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { Sparkles } from 'lucide-react'
+import SeriesShowcase from '@/components/home/SeriesShowcase'
+import Reveal from '@/components/motion/Reveal'
+import { getSeriesArticles } from '@/lib/articles'
+import { SERIES, PLANNED_SERIES } from '@/lib/series'
 
-export const metadata: Metadata = { title: 'Series' }
+export const metadata: Metadata = {
+  title: 'Series',
+  description: 'Project-based learning tracks — 30 Days of DevOps, with MLOps and AI engineering on the way.',
+}
 
-const SERIES = [
-  {
-    slug:       '30-days-devops',
-    title:      '30 Days of DevOps',
-    domain:     'DevOps',
-    status:     'Active',
-    days:       30,
-    desc:       'A structured 30-day program through the full DevOps toolchain. Git workflows, Docker, Kubernetes, CI/CD pipelines, Terraform, Ansible, Prometheus, Grafana, and security hardening.',
-    topics:     ['Git & Branching', 'Docker', 'Kubernetes', 'GitHub Actions', 'Terraform', 'Ansible', 'Prometheus', 'Grafana', 'Secrets Management'],
-    color:      'border-accent',
-    dotColor:   'bg-success',
-  },
-]
+export default function SeriesIndexPage() {
+  const series = SERIES['30-days-devops']
+  const articles = getSeriesArticles(series.slug)
 
-const COMING = [
-  { title: '30 Days of MLOps',    domain: 'MLOps',    desc: 'ML pipelines, experiment tracking, model serving, and monitoring in production.' },
-  { title: '30 Days of Security', domain: 'Security', desc: 'Threat modelling, hardening, secrets management, CVE triage, and compliance automation.' },
-]
-
-export default function SeriesPage() {
   return (
-    <div className="mx-auto max-w-4xl px-6 py-16">
+    <div className="mx-auto max-w-6xl px-5 pt-14">
+      <Reveal>
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">learning tracks</p>
+        <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink">Series</h1>
+        <p className="mt-3 max-w-xl text-[15.5px] leading-relaxed text-ink-dim">
+          Each series is a complete curriculum: ordered days, one working project
+          per day, progress tracked as you go.
+        </p>
+      </Reveal>
 
-      <h1 className="text-2xl font-bold tracking-tight text-text-primary">Series</h1>
-      <p className="mt-2 text-sm text-text-secondary">
-        Each series is a structured, project-based program. Work through it day by day and ship a real system.
-      </p>
+      <Reveal className="mt-12">
+        <SeriesShowcase
+          name={series.name}
+          tagline={series.tagline}
+          level={series.level}
+          topics={series.topics}
+          total={series.total}
+          href={`/series/${series.slug}`}
+          days={articles.map(a => ({ day: a.day ?? 0, slug: a.slug, title: a.title }))}
+        />
+      </Reveal>
 
-      {/* Active series */}
-      <div className="mt-10 space-y-5">
-        {SERIES.map(s => (
-          <div key={s.slug}
-            className={`rounded-xl border ${s.color} bg-bg-secondary p-6`}>
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${s.dotColor}`} />
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-success">
-                    {s.status}
-                  </span>
-                </div>
-                <h2 className="text-lg font-bold text-text-primary tracking-tight">{s.title}</h2>
-                <p className="text-xs text-text-secondary mt-1">{s.domain} · {s.days} articles</p>
-              </div>
-              <Link
-                href={`/articles?series=${s.slug}`}
-                className="shrink-0 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-bg-primary hover:bg-[#79b8ff] transition-colors">
-                Start Series →
-              </Link>
-            </div>
-
-            <p className="mt-4 text-sm text-text-secondary leading-relaxed">{s.desc}</p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {s.topics.map(t => (
-                <span key={t}
-                  className="rounded-full border border-border px-2.5 py-0.5 text-[11px] text-text-secondary">
-                  {t}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Coming soon */}
-      <h2 className="mt-14 text-xs font-semibold uppercase tracking-widest text-text-muted mb-5">
-        Coming Soon
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {COMING.map(s => (
-          <div key={s.title}
-            className="rounded-xl border border-border bg-bg-secondary p-5 opacity-60">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-text-muted" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">
-                In Development
+      <div className="mt-8 grid gap-5 md:grid-cols-2">
+        {PLANNED_SERIES.map((p, i) => (
+          <Reveal key={p.name} delay={i * 0.08}>
+            <div className="card h-full border-dashed p-8 opacity-90">
+              <span className="chip !border-accent-2/30 !text-accent-2">
+                <Sparkles size={11} /> {p.status}
               </span>
+              <h3 className="mt-4 font-display text-xl font-semibold text-ink">{p.name}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-ink-mute">{p.blurb}</p>
             </div>
-            <h3 className="text-sm font-bold text-text-primary">{s.title}</h3>
-            <p className="text-[11px] text-text-muted mt-0.5">{s.domain}</p>
-            <p className="mt-2 text-xs text-text-secondary leading-relaxed">{s.desc}</p>
-          </div>
+          </Reveal>
         ))}
       </div>
-
     </div>
   )
 }

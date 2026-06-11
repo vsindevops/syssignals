@@ -1,116 +1,155 @@
 import Link from 'next/link'
-import { getAllArticles } from '@/lib/mdx'
+import { ArrowRight, TerminalSquare, CheckCircle2, Workflow, LifeBuoy } from 'lucide-react'
+import Hero from '@/components/home/Hero'
+import ContinueCard from '@/components/home/ContinueCard'
+import SeriesShowcase from '@/components/home/SeriesShowcase'
+import ArticleCard from '@/components/ArticleCard'
+import Reveal from '@/components/motion/Reveal'
+import { getAllArticles, getSearchIndex, getSeriesArticles } from '@/lib/articles'
+import { SERIES } from '@/lib/series'
 
-const DOMAINS = [
-  { icon: '⚙️', label: 'DevOps',   desc: 'CI/CD, containers, Kubernetes, IaC, and cloud infrastructure.'   },
-  { icon: '🤖', label: 'MLOps',    desc: 'ML pipelines, model serving, monitoring, and experiment tracking.' },
-  { icon: '🔐', label: 'Security', desc: 'Hardening, secrets management, threat modelling, and compliance.'  },
+const FORMAT = [
+  {
+    icon: TerminalSquare,
+    title: 'Every article is a build',
+    body: 'No theory dumps. Each day ships a working project — a pipeline, a cluster, a chart — that you run on your own machine.',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Commands with expected output',
+    body: 'Every command is verified before publishing, and you see exactly what it should print. If your output differs, you know immediately.',
+  },
+  {
+    icon: Workflow,
+    title: 'Diagrams that are explained',
+    body: 'Every diagram comes with a plain-English walkthrough of each node, arrow and colour. No decoder ring required.',
+  },
+  {
+    icon: LifeBuoy,
+    title: 'Common errors, with fixes',
+    body: 'Each article ends with the 4–6 real errors you are most likely to hit, and the exact fix for each one.',
+  },
 ]
 
 export default function HomePage() {
-  const articles = getAllArticles().slice(0, 5)
+  const all = getAllArticles()
+  const latest = all.slice(0, 6)
+  const series = SERIES['30-days-devops']
+  const seriesArticles = getSeriesArticles(series.slug)
+  const totalMinutes = all.reduce((s, a) => s + a.readMinutes, 0)
+  const totalWords = all.reduce((s, a) => s + a.words, 0)
 
   return (
     <>
-      {/* Hero */}
-      <section className="border-b border-border bg-bg-primary">
-        <div className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-4">
-            Learn by building
-          </p>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-text-primary leading-tight max-w-2xl">
-            The engineer&apos;s guide to<br />
-            <span className="text-accent">DevOps · MLOps · Security</span>
-          </h1>
-          <p className="mt-6 text-base text-text-secondary leading-relaxed max-w-xl">
-            Project-based articles and courses that ship working systems.
-            No isolated theory. No toy examples. Every piece of content
-            produces something you can run.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/series"
-              className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-bg-primary hover:bg-[#79b8ff] transition-colors">
-              Browse Series
-            </Link>
-            <Link href="/articles"
-              className="rounded-md border border-border px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:border-text-secondary transition-colors">
-              All Articles
-            </Link>
-          </div>
-        </div>
+      <Hero
+        stats={{
+          published: seriesArticles.length,
+          total: series.total,
+          hours: Math.round(totalMinutes / 60),
+          words: totalWords,
+        }}
+      />
+
+      <ContinueCard docs={getSearchIndex()} total={series.total} />
+
+      {/* flagship series */}
+      <section className="mx-auto mt-20 max-w-6xl px-5">
+        <Reveal>
+          <SeriesShowcase
+            name={series.name}
+            tagline={series.tagline}
+            level={series.level}
+            topics={series.topics}
+            total={series.total}
+            href={`/series/${series.slug}`}
+            days={seriesArticles.map(a => ({ day: a.day ?? 0, slug: a.slug, title: a.title }))}
+          />
+        </Reveal>
       </section>
 
-      {/* Domains */}
-      <section className="border-b border-border bg-bg-secondary">
-        <div className="mx-auto max-w-6xl px-6 py-14">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {DOMAINS.map(({ icon, label, desc }) => (
-              <div key={label} className="rounded-lg border border-border bg-bg-primary p-5">
-                <div className="text-2xl mb-3">{icon}</div>
-                <p className="text-sm font-semibold text-text-primary mb-1">{label}</p>
-                <p className="text-xs text-text-secondary leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Latest articles */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-text-muted">
-            Latest Articles
+      {/* format */}
+      <section className="mx-auto mt-24 max-w-6xl px-5">
+        <Reveal>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">the format</p>
+          <h2 className="mt-3 max-w-xl font-display text-3xl font-bold tracking-tight text-ink">
+            Built for people who learn by doing
           </h2>
-          <Link href="/articles" className="text-xs text-accent hover:underline">
-            View all →
-          </Link>
-        </div>
-
-        <div className="space-y-3">
-          {articles.length === 0 && (
-            <p className="text-sm text-text-muted">No articles yet — check back soon.</p>
-          )}
-          {articles.map(article => (
-            <Link
-              key={article.slug}
-              href={`/articles/${article.slug}`}
-              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-border bg-bg-secondary px-5 py-4 hover:border-accent transition-all"
-            >
-              <div>
-                <p className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">
-                  {article.title}
-                </p>
-                {article.excerpt && (
-                  <p className="text-xs text-text-secondary mt-0.5 line-clamp-1">{article.excerpt}</p>
-                )}
+        </Reveal>
+        <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          {FORMAT.map((f, i) => (
+            <Reveal key={f.title} delay={i * 0.07}>
+              <div className="card card-hover h-full p-7">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <f.icon size={19} />
+                </span>
+                <h3 className="mt-4 font-display text-lg font-semibold text-ink">{f.title}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-mute">{f.body}</p>
               </div>
-              <div className="flex items-center gap-3 shrink-0 text-[11px] text-text-muted">
-                {article.series && (
-                  <span className="rounded-full border border-border px-2.5 py-0.5 text-text-secondary">
-                    {article.series}
-                  </span>
-                )}
-                <span>{article.readTime}</span>
-              </div>
-            </Link>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      {/* CTA banner */}
-      <section className="border-t border-border bg-bg-secondary">
-        <div className="mx-auto max-w-6xl px-6 py-14 text-center">
-          <h2 className="text-xl font-bold text-text-primary tracking-tight">
-            Ready to start building?
-          </h2>
-          <p className="mt-2 text-sm text-text-secondary max-w-md mx-auto">
-            Pick a series and work through it end-to-end. Every article is a step in a larger project.
-          </p>
-          <Link href="/series"
-            className="mt-6 inline-block rounded-md bg-accent px-6 py-2.5 text-sm font-semibold text-bg-primary hover:bg-[#79b8ff] transition-colors">
-            View all Series
-          </Link>
+      {/* latest */}
+      <section className="mx-auto mt-24 max-w-6xl px-5">
+        <Reveal>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">fresh signals</p>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink">Latest articles</h2>
+            </div>
+            <Link
+              href="/articles"
+              className="hidden items-center gap-1.5 text-sm font-medium text-ink-dim transition-colors hover:text-accent sm:flex"
+            >
+              View all <ArrowRight size={15} />
+            </Link>
+          </div>
+        </Reveal>
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {latest.map((a, i) => (
+            <Reveal key={a.slug} delay={(i % 3) * 0.07}>
+              <ArticleCard article={a} />
+            </Reveal>
+          ))}
         </div>
+      </section>
+
+      {/* CTA */}
+      <section className="mx-auto mt-28 max-w-6xl px-5">
+        <Reveal>
+          <div className="card relative overflow-hidden p-10 text-center md:p-16">
+            <div className="bg-grid absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_60%_70%_at_50%_50%,black,transparent)]" />
+            <div
+              className="pointer-events-none absolute left-1/2 top-0 h-40 w-[480px] -translate-x-1/2 rounded-full blur-[100px]"
+              style={{ background: 'radial-gradient(closest-side, rgba(167,139,250,0.22), transparent)' }}
+            />
+            <h2 className="relative font-display text-3xl font-bold tracking-tight text-ink md:text-4xl">
+              Stop reading about systems.
+              <br />
+              <span className="gradient-text">Start building them.</span>
+            </h2>
+            <p className="relative mx-auto mt-4 max-w-md text-[15px] text-ink-dim">
+              Day 1 takes about an hour and leaves you with a production-ready Git workflow. The rest compounds from there.
+            </p>
+            <div className="relative mt-8 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/articles/day-01-git-branching-strategies"
+                className="glow inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-[15px] font-semibold text-bg transition-transform hover:scale-[1.03]"
+              >
+                Begin Day 1 <ArrowRight size={16} />
+              </Link>
+              <a
+                href="https://x.com/syssignals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-xl border border-line bg-surface-2 px-6 py-3 text-[15px] font-medium text-ink-dim transition-colors hover:border-line-2 hover:text-ink"
+              >
+                Follow @syssignals
+              </a>
+            </div>
+          </div>
+        </Reveal>
       </section>
     </>
   )

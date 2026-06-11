@@ -1,12 +1,19 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { MDXRemote } from 'next-mdx-remote/rsc'
-import { getAllArticles, getArticle, getSeriesArticles } from '@/lib/mdx'
+import { ArrowLeft, ArrowRight, CalendarDays, Clock, Layers } from 'lucide-react'
+import { getAllArticles, getArticle, getAdjacent } from '@/lib/articles'
+import { renderMarkdown } from '@/lib/markdown'
+import ReadingProgress from '@/components/article/ReadingProgress'
+import Toc from '@/components/article/Toc'
+import ArticleEnhancer from '@/components/article/ArticleEnhancer'
+import MarkComplete from '@/components/article/MarkComplete'
 
-interface Props { params: Promise<{ slug: string }> }
+interface Props {
+  params: Promise<{ slug: string }>
+}
 
-export async function generateStaticParams() {
+export function generateStaticParams() {
   return getAllArticles().map(a => ({ slug: a.slug }))
 }
 
@@ -15,148 +22,163 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const article = getArticle(slug)
   if (!article) return {}
   return {
-    title:       article.title,
+    title: article.day !== undefined ? `Day ${article.day}: ${article.title}` : article.title,
     description: article.excerpt,
+    openGraph: {
+      title: article.title,
+      description: article.excerpt,
+      type: 'article',
+      publishedTime: article.date,
+      tags: article.tags,
+    },
   }
 }
+
+const fmtDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
 
 export default async function ArticlePage({ params }: Props) {
   const { slug } = await params
   const article = getArticle(slug)
   if (!article) notFound()
 
-  const seriesArticles = article.seriesSlug
-    ? getSeriesArticles(article.seriesSlug)
-    : []
-
-  const currentIndex = seriesArticles.findIndex(a => a.slug === slug)
-  const prev = currentIndex > 0 ? seriesArticles[currentIndex - 1] : null
-  const next = currentIndex < seriesArticles.length - 1 ? seriesArticles[currentIndex + 1] : null
+  const { html, toc, hasMermaid } = await renderMarkdown(article.content)
+  const { prev, next } = getAdjacent(slug)
+  const shareUrl = `https://syssignals.com/articles/${slug}`
+  const shareText = `${article.day !== undefined ? `Day ${article.day}: ` : ''}${article.title} — by @syssignals`
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
-      <div className="flex gap-10">
+    <>
+      <ReadingProgress />
+      <ArticleEnhancer slug={slug} hasMermaid={hasMermaid} />
 
-        {/* Article */}
-        <article className="flex-1 min-w-0">
+      <div className="relative">
+        <div className="bg-grid bg-grid-fade absolute inset-x-0 top-0 -z-10 h-[340px]" />
 
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs text-text-muted mb-8">
-            <Link href="/" className="hover:text-accent transition-colors">Home</Link>
-            <span>/</span>
-            <Link href="/articles" className="hover:text-accent transition-colors">Articles</Link>
-            {article.series && (
-              <>
-                <span>/</span>
-                <span className="text-text-secondary">{article.series}</span>
-              </>
-            )}
-          </nav>
-
-          {/* Header */}
-          <header className="mb-10 pb-8 border-b border-border">
-            {article.day && (
-              <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">
-                Day {article.day}
-              </p>
-            )}
-            <h1 className="text-3xl font-bold tracking-tight text-text-primary leading-tight">
-              {article.title}
-            </h1>
-            {article.excerpt && (
-              <p className="mt-3 text-base text-text-secondary leading-relaxed">
-                {article.excerpt}
-              </p>
-            )}
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-text-muted">
-              <span>Vishwas Sharma</span>
-              <span>·</span>
-              {article.date && <span>{new Date(article.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>}
-              <span>·</span>
-              <span>{article.readTime}</span>
-              {article.tags.map(tag => (
-                <span key={tag}
-                  className="rounded-full border border-border px-2.5 py-0.5 text-text-secondary">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          </header>
-
-          {/* Content */}
-          <div className="prose prose-invert prose-sm max-w-none
-            prose-headings:font-semibold prose-headings:tracking-tight
-            prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-3 prose-h2:border-b prose-h2:border-border
-            prose-h3:text-base prose-h3:mt-8 prose-h3:mb-3
-            prose-p:text-text-secondary prose-p:leading-relaxed
-            prose-a:text-accent prose-a:no-underline hover:prose-a:underline
-            prose-code:text-[#f0883e] prose-code:bg-bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-[0.84em] prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
-            prose-pre:bg-bg-secondary prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:text-sm
-            prose-blockquote:border-l-accent prose-blockquote:bg-bg-secondary prose-blockquote:rounded-r-md prose-blockquote:not-italic prose-blockquote:text-text-secondary
-            prose-table:text-sm prose-th:text-text-primary prose-th:font-semibold prose-td:text-text-secondary
-            prose-hr:border-border
-            prose-strong:text-text-primary prose-strong:font-semibold
-            prose-li:text-text-secondary">
-            <MDXRemote source={article.content} />
-          </div>
-
-          {/* Prev / Next */}
-          {(prev || next) && (
-            <nav className="mt-14 pt-8 border-t border-border grid grid-cols-2 gap-4">
-              {prev ? (
-                <Link href={`/articles/${prev.slug}`}
-                  className="group rounded-lg border border-border bg-bg-secondary p-4 hover:border-accent transition-all">
-                  <p className="text-[11px] text-text-muted mb-1">← Previous</p>
-                  <p className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors line-clamp-2">
-                    {prev.title}
-                  </p>
-                </Link>
-              ) : <div />}
-              {next && (
-                <Link href={`/articles/${next.slug}`}
-                  className="group rounded-lg border border-border bg-bg-secondary p-4 hover:border-accent transition-all text-right ml-auto w-full">
-                  <p className="text-[11px] text-text-muted mb-1">Next →</p>
-                  <p className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors line-clamp-2">
-                    {next.title}
-                  </p>
-                </Link>
+        <div className="mx-auto max-w-6xl px-5 pt-10">
+          {/* breadcrumb */}
+          {article.series && (
+            <Link
+              href={`/series/${article.seriesSlug}`}
+              className="inline-flex items-center gap-2 font-mono text-xs text-ink-mute transition-colors hover:text-accent"
+            >
+              <Layers size={12} />
+              {article.series}
+              {article.day !== undefined && article.seriesTotal && (
+                <span className="text-ink-mute/70">· day {article.day} of {article.seriesTotal}</span>
               )}
-            </nav>
+            </Link>
           )}
 
-        </article>
+          <div className="mt-5 grid gap-12 lg:grid-cols-[minmax(0,1fr)_230px]">
+            <div className="min-w-0 max-w-[760px]">
+              {/* header */}
+              <header className="animate-fade-up">
+                <div className="flex flex-wrap items-center gap-2">
+                  {article.day !== undefined && (
+                    <span className="chip !border-accent/25 !text-accent">DAY {String(article.day).padStart(2, '0')}</span>
+                  )}
+                  {article.topics.map(t => (
+                    <span key={t} className="chip">{t}</span>
+                  ))}
+                </div>
 
-        {/* Series sidebar */}
-        {seriesArticles.length > 0 && (
-          <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-20 rounded-xl border border-border bg-bg-secondary p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted mb-3">
-                {article.series}
-              </p>
-              <ul className="space-y-0.5">
-                {seriesArticles.map((a, i) => (
-                  <li key={a.slug}>
-                    <Link
-                      href={`/articles/${a.slug}`}
-                      className={`flex items-start gap-2.5 rounded-md px-2.5 py-2 text-xs transition-colors ${
-                        a.slug === slug
-                          ? 'bg-accent/10 text-accent font-medium'
-                          : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
-                      }`}
+                <h1 className="mt-5 font-display text-[2rem] font-bold leading-[1.15] tracking-tight text-ink sm:text-[2.6rem]">
+                  {article.title}
+                </h1>
+
+                <p className="mt-5 text-[15.5px] leading-relaxed text-ink-dim">{article.excerpt}</p>
+
+                <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 border-y border-line py-3.5 font-mono text-[12px] text-ink-mute">
+                  <span className="flex items-center gap-1.5"><CalendarDays size={12} /> {fmtDate(article.date)}</span>
+                  <span className="flex items-center gap-1.5"><Clock size={12} /> {article.readTime}</span>
+                  <span>{Math.round(article.words / 100) / 10}k words</span>
+                  <span className="ml-auto">
+                    <MarkComplete slug={slug} day={article.day} />
+                  </span>
+                </div>
+              </header>
+
+              {/* body */}
+              <article className="prose-ss mt-10" dangerouslySetInnerHTML={{ __html: html }} />
+
+              {/* footer */}
+              <footer className="mt-16 border-t border-line pt-8">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <MarkComplete slug={slug} day={article.day} />
+                  <div className="flex items-center gap-2 font-mono text-xs text-ink-mute">
+                    share:
+                    <a
+                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-ink-dim transition-colors hover:border-line-2 hover:text-ink"
                     >
-                      <span className="shrink-0 text-[10px] text-text-muted mt-0.5 w-4 text-right">
-                        {i + 1}
-                      </span>
-                      <span className="leading-snug">{a.title}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
-        )}
+                      X
+                    </a>
+                    <a
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-ink-dim transition-colors hover:border-line-2 hover:text-ink"
+                    >
+                      LinkedIn
+                    </a>
+                  </div>
+                </div>
 
+                {(prev || next) && (
+                  <nav className="mt-10 grid gap-4 sm:grid-cols-2" aria-label="Series navigation">
+                    {prev ? (
+                      <Link href={`/articles/${prev.slug}`} className="card card-hover group p-5">
+                        <span className="flex items-center gap-1.5 font-mono text-[11px] text-ink-mute">
+                          <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-0.5" />
+                          previous · day {prev.day}
+                        </span>
+                        <span className="mt-2 block font-display text-[15px] font-semibold leading-snug text-ink group-hover:text-accent">
+                          {prev.title}
+                        </span>
+                      </Link>
+                    ) : (
+                      <span />
+                    )}
+                    {next ? (
+                      <Link href={`/articles/${next.slug}`} className="card card-hover group p-5 text-right">
+                        <span className="flex items-center justify-end gap-1.5 font-mono text-[11px] text-ink-mute">
+                          next · day {next.day}
+                          <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                        <span className="mt-2 block font-display text-[15px] font-semibold leading-snug text-ink group-hover:text-accent">
+                          {next.title}
+                        </span>
+                      </Link>
+                    ) : (
+                      <div className="card flex items-center justify-center p-5 font-mono text-xs text-ink-mute">
+                        next day publishing soon — follow{' '}
+                        <a href="https://x.com/syssignals" target="_blank" rel="noopener noreferrer" className="ml-1 text-accent hover:underline">
+                          @syssignals
+                        </a>
+                      </div>
+                    )}
+                  </nav>
+                )}
+              </footer>
+            </div>
+
+            {/* TOC rail */}
+            <aside className="hidden lg:block">
+              <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-8 pr-1">
+                <Toc entries={toc} />
+              </div>
+            </aside>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
