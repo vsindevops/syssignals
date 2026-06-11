@@ -1,0 +1,8 @@
+.git
+.next
+node_modules
+.claude
+README.md
+AGENTS.md
+CLAUDE.md
+.env*

@@ -4,6 +4,7 @@ import Hero from '@/components/home/Hero'
 import ContinueCard from '@/components/home/ContinueCard'
 import SeriesShowcase from '@/components/home/SeriesShowcase'
 import ArticleCard from '@/components/ArticleCard'
+import NewsletterForm from '@/components/NewsletterForm'
 import Reveal from '@/components/motion/Reveal'
 import { getAllArticles, getSearchIndex, getSeriesArticles } from '@/lib/articles'
 import { SERIES } from '@/lib/series'
@@ -115,8 +116,30 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* newsletter */}
+      <section className="mx-auto mt-24 max-w-6xl px-5">
+        <Reveal>
+          <div className="card relative overflow-hidden p-10 text-center md:p-12">
+            <div
+              className="pointer-events-none absolute right-[-120px] top-[-120px] h-72 w-72 rounded-full blur-[110px]"
+              style={{ background: 'radial-gradient(closest-side, rgba(34,211,238,0.16), transparent)' }}
+            />
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">stay tuned in</p>
+            <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">
+              One email when a new day ships
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-[14.5px] text-ink-dim">
+              The next build lands in your inbox — nothing else, no spam, unsubscribe anytime.
+            </p>
+            <div className="mt-7">
+              <NewsletterForm />
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
       {/* CTA */}
-      <section className="mx-auto mt-28 max-w-6xl px-5">
+      <section className="mx-auto mt-16 max-w-6xl px-5">
         <Reveal>
           <div className="card relative overflow-hidden p-10 text-center md:p-16">
             <div className="bg-grid absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_60%_70%_at_50%_50%,black,transparent)]" />

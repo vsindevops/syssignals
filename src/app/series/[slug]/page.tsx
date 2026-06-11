@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { BarChart3, CalendarDays, GaugeCircle } from 'lucide-react'
+import JsonLd, { courseJsonLd } from '@/components/JsonLd'
 import Curriculum from '@/components/series/Curriculum'
 import Reveal from '@/components/motion/Reveal'
 import { getSeriesArticles } from '@/lib/articles'
@@ -43,6 +44,7 @@ export default async function SeriesPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="relative">
+      <JsonLd data={courseJsonLd({ slug, name: info.name, description: info.description })} />
       <div className="bg-grid bg-grid-fade absolute inset-x-0 top-0 -z-10 h-[420px]" />
       <div className="mx-auto max-w-4xl px-5 pt-14">
         <Reveal>

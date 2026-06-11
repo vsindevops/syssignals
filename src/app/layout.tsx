@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+import Analytics from '@/components/Analytics'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { ProgressProvider } from '@/components/progress/ProgressProvider'
@@ -18,6 +19,9 @@ export const metadata: Metadata = {
   description:
     'Project-based learning for DevOps, MLOps and AI engineers. Every article ships a working project — verified commands, expected output, no fluff.',
   metadataBase: new URL('https://syssignals.com'),
+  alternates: {
+    types: { 'application/rss+xml': '/feed.xml' },
+  },
   openGraph: {
     siteName: 'Systems & Signals',
     locale: 'en_US',
@@ -40,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1">{children}</main>
           <Footer />
         </ProgressProvider>
+        <Analytics />
       </body>
     </html>
   )

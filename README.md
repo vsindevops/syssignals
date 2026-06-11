@@ -31,6 +31,28 @@ strips the Jekyll series banner, and rewrites internal links from
 When a new day ships, also update the curriculum metadata in `src/lib/series.ts`
 (move the day from `upcoming` into the right module).
 
+## Go-live features
+
+- **OG images** — generated per article (`/articles/<slug>/opengraph-image`) and site-wide, branded cards via `src/lib/og.tsx` (satori + fontsource WOFFs)
+- **RSS** — `/feed.xml`; **sitemap** — `/sitemap.xml`; **robots** — `/robots.txt`; JSON-LD (`TechArticle` + `Course`)
+- **Analytics** — GoatCounter (syssignals.goatcounter.com), SPA-aware; public view-count chip on articles
+- **Comments** — Giscus on GitHub Discussions (syssignals/30-days-devops), lazy-loaded, mapped by slug
+- **Newsletter** — `/api/subscribe`; set ONE provider in env:
+  - `BUTTONDOWN_API_KEY=...`, or
+  - `RESEND_API_KEY=...` + `RESEND_AUDIENCE_ID=...`
+
+  Unconfigured, the form shows a friendly "signups open soon" fallback.
+
+## Deployment (Coolify / any Docker host)
+
+```bash
+docker build -t syssignals .
+docker run -p 3000:3000 -e BUTTONDOWN_API_KEY=... syssignals
+```
+
+The image uses Next standalone output; article markdown and OG fonts are copied
+in explicitly (read from disk at runtime, invisible to output tracing).
+
 ## Development
 
 ```bash

@@ -4,10 +4,14 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CalendarDays, Clock, Layers } from 'lucide-react'
 import { getAllArticles, getArticle, getAdjacent } from '@/lib/articles'
 import { renderMarkdown } from '@/lib/markdown'
+import JsonLd, { articleJsonLd } from '@/components/JsonLd'
 import ReadingProgress from '@/components/article/ReadingProgress'
 import Toc from '@/components/article/Toc'
 import ArticleEnhancer from '@/components/article/ArticleEnhancer'
+import Comments from '@/components/article/Comments'
 import MarkComplete from '@/components/article/MarkComplete'
+import ViewCount from '@/components/article/ViewCount'
+import NewsletterForm from '@/components/NewsletterForm'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -54,6 +58,7 @@ export default async function ArticlePage({ params }: Props) {
 
   return (
     <>
+      <JsonLd data={articleJsonLd(article)} />
       <ReadingProgress />
       <ArticleEnhancer slug={slug} hasMermaid={hasMermaid} />
 
@@ -98,6 +103,7 @@ export default async function ArticlePage({ params }: Props) {
                   <span className="flex items-center gap-1.5"><CalendarDays size={12} /> {fmtDate(article.date)}</span>
                   <span className="flex items-center gap-1.5"><Clock size={12} /> {article.readTime}</span>
                   <span>{Math.round(article.words / 100) / 10}k words</span>
+                  <ViewCount slug={slug} />
                   <span className="ml-auto">
                     <MarkComplete slug={slug} day={article.day} />
                   </span>
@@ -130,6 +136,16 @@ export default async function ArticlePage({ params }: Props) {
                       LinkedIn
                     </a>
                   </div>
+                </div>
+
+                <div className="card mt-10 p-6">
+                  <p className="font-display text-[15.5px] font-semibold text-ink">
+                    Get the next day in your inbox
+                  </p>
+                  <p className="mb-4 mt-1 text-[13px] text-ink-mute">
+                    One email per published day — nothing else.
+                  </p>
+                  <NewsletterForm compact />
                 </div>
 
                 {(prev || next) && (
@@ -167,6 +183,8 @@ export default async function ArticlePage({ params }: Props) {
                     )}
                   </nav>
                 )}
+
+                <Comments slug={slug} />
               </footer>
             </div>
 
