@@ -70,13 +70,13 @@ export const SERIES: Record<string, SeriesInfo> = {
         blurb: 'Jobs and CronJobs, DaemonSets on every node, affinity and topology spread, priorities and preemption.',
         days: [19, 20, 21, 22],
       },
+      {
+        title: 'Debugging & Operations',
+        blurb: 'Working on a hardened cluster: ephemeral containers, kubectl debug, node-level forensics.',
+        days: [23],
+      },
     ],
     upcoming: [
-      {
-        day: 23,
-        title: 'Ephemeral Containers and kubectl debug',
-        blurb: 'Debugging the Pods Day 14 locked down — ephemeral containers, copy-with-mutations, node debugging.',
-      },
       { day: 24, title: 'To be announced' },
       { day: 25, title: 'To be announced' },
       { day: 26, title: 'To be announced' },

@@ -27,20 +27,38 @@ export default async function SeriesPage({ params }: { params: Promise<{ slug: s
   const bySlugDay = new Map(articles.map(a => [a.day, a]))
   const totalMin = articles.reduce((s, a) => s + a.readMinutes, 0)
 
+  const toLesson = (a: NonNullable<ReturnType<typeof bySlugDay.get>>) => ({
+    day: a.day ?? 0,
+    slug: a.slug,
+    title: a.title,
+    excerpt: a.excerpt,
+    readTime: a.readTime,
+  })
+
   const modules = info.modules.map(m => ({
     title: m.title,
     blurb: m.blurb,
     lessons: m.days
       .map(d => bySlugDay.get(d))
       .filter(a => a !== undefined)
-      .map(a => ({
-        day: a.day ?? 0,
-        slug: a.slug,
-        title: a.title,
-        excerpt: a.excerpt,
-        readTime: a.readTime,
-      })),
+      .map(toLesson),
   }))
+
+  // Self-healing: a freshly synced day that hasn't been placed into a module
+  // in series.ts yet still shows up, in its own block at the end.
+  const assigned = new Set(info.modules.flatMap(m => m.days))
+  const unassigned = articles.filter(a => a.day !== undefined && !assigned.has(a.day))
+  if (unassigned.length > 0) {
+    modules.push({
+      title: 'Just shipped',
+      blurb: 'The newest days — fresh off the cluster.',
+      lessons: unassigned.map(toLesson),
+    })
+  }
+
+  // Never show a published day as locked/upcoming.
+  const publishedDays = new Set(articles.map(a => a.day))
+  const upcoming = info.upcoming.filter(u => !publishedDays.has(u.day))
 
   return (
     <div className="relative">
@@ -60,7 +78,7 @@ export default async function SeriesPage({ params }: { params: Promise<{ slug: s
         </Reveal>
 
         <div className="mt-12 pb-10">
-          <Curriculum modules={modules} upcoming={info.upcoming} total={info.total} />
+          <Curriculum modules={modules} upcoming={upcoming} total={info.total} />
         </div>
       </div>
     </div>

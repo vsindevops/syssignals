@@ -28,8 +28,17 @@ strips the Jekyll series banner, and rewrites internal links from
 `/articles/YYYY/MM/DD/<slug>/` to `/articles/<slug>`. Output lands in
 `content/devops/30-days-devops/`.
 
-When a new day ships, also update the curriculum metadata in `src/lib/series.ts`
-(move the day from `upcoming` into the right module).
+### Publishing a new day (the whole flow)
+
+```bash
+npm run publish:day
+```
+
+This syncs from the Jekyll repo, verifies the production build, commits and
+pushes — Coolify deploys syssignals.com from the push. Afterwards (or before),
+place the new day into its module in `src/lib/series.ts` and remove it from
+`upcoming`; if you forget, the site self-heals and shows it under a
+"Just shipped" block until you do.
 
 ## Go-live features
 
