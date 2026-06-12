@@ -54,7 +54,7 @@ function ProgressRing({ pct }: { pct: number }) {
 }
 
 export default function Curriculum({ modules, upcoming, total }: Props) {
-  const { completed, hydrated, isComplete, toggle } = useProgress()
+  const { completed, hydrated, isComplete, toggle, user } = useProgress()
   const reduce = useReducedMotion()
   const published = modules.flatMap(m => m.lessons)
   const doneCount = hydrated ? published.filter(l => completed.includes(l.slug)).length : 0
@@ -76,7 +76,14 @@ export default function Curriculum({ modules, upcoming, total }: Props) {
             {doneCount === 0 ? 'Your progress starts here' : `${doneCount} of ${total} days complete`}
           </p>
           <p className="mt-1 text-sm text-ink-mute">
-            {published.length} published · ~{Math.round(totalMin / 60)}h of hands-on builds · progress saved on this device
+            {published.length} published · ~{Math.round(totalMin / 60)}h of hands-on builds ·{' '}
+            {user ? (
+              'progress synced to your account'
+            ) : (
+              <Link href="/login" className="text-accent hover:underline">
+                sign in to sync progress across devices
+              </Link>
+            )}
           </p>
         </div>
         <div className="hidden h-2 w-44 overflow-hidden rounded-full bg-surface-3 md:block">

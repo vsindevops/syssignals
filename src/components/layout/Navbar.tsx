@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Search, Menu, X } from 'lucide-react'
 import Logo from '@/components/Logo'
+import AccountMenu from '@/components/layout/AccountMenu'
 import SearchPalette from '@/components/search/SearchPalette'
 import type { SearchDoc } from '@/lib/articles'
 
@@ -87,7 +88,12 @@ export default function Navbar({ searchDocs }: { searchDocs: SearchDoc[] }) {
             <kbd className="ml-3">⌘K</kbd>
           </button>
 
+          <div className="hidden md:block">
+            <AccountMenu />
+          </div>
+
           <div className="ml-auto flex items-center gap-1 md:hidden">
+            <AccountMenu />
             <button
               onClick={() => setSearchOpen(true)}
               className="rounded-lg p-2 text-ink-dim hover:text-ink"
