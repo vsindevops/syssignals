@@ -12,7 +12,11 @@ DevOps, MLOps and AI engineering content by Vishwas Sharma.
   that would break MDX compilation
 - **Mermaid** — diagrams rendered client-side from fenced ```mermaid blocks
 - **motion** (Framer Motion) — scroll reveals, hero, curriculum animations
-- Reader progress (completed days, last-read, continue-learning) in `localStorage` — no backend
+- **Accounts**: passwordless magic-link sign-in (Auth.js v5 + Resend + Postgres on the VPS).
+  Reader progress is server-synced for signed-in users, `localStorage` for anonymous
+  readers, merged into the account on first login. Env: `DATABASE_URL`, `AUTH_SECRET`,
+  `AUTH_URL`, `RESEND_API_KEY`. Local dev needs an SSH tunnel to the prod Postgres
+  (see `.env.local`).
 
 ## Content workflow
 
