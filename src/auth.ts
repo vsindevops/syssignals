@@ -48,7 +48,11 @@ declare module 'next-auth' {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PostgresAdapter(db()),
-  session: { strategy: 'database' },
+  session: {
+    strategy: 'database',
+    maxAge: 30 * 24 * 60 * 60, // signed in for 30 days…
+    updateAge: 24 * 60 * 60, // …rolling: any visit ≥1 day after the last extends it
+  },
   trustHost: true,
   callbacks: {
     session({ session, user }) {

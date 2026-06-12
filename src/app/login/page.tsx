@@ -7,11 +7,13 @@ export const metadata: Metadata = {
 }
 
 interface Props {
-  searchParams: Promise<{ sent?: string; error?: string }>
+  searchParams: Promise<{ sent?: string; error?: string; callbackUrl?: string }>
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { sent, error } = await searchParams
+  const { sent, error, callbackUrl } = await searchParams
+  // same-origin paths only — never forward to an absolute URL
+  const returnTo = callbackUrl?.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/'
 
   return (
     <div className="relative">
@@ -28,7 +30,7 @@ export default async function LoginPage({ searchParams }: Props) {
           </p>
         </div>
         <div className="mt-8">
-          <LoginForm initialSent={sent === '1'} error={error} />
+          <LoginForm initialSent={sent === '1'} error={error} returnTo={returnTo} />
         </div>
       </div>
     </div>

@@ -6,7 +6,13 @@ import { Mail, Loader2, MailCheck } from 'lucide-react'
 
 type Status = 'idle' | 'loading' | 'sent' | 'error'
 
-export default function LoginForm({ initialSent, error }: { initialSent: boolean; error?: string }) {
+interface Props {
+  initialSent: boolean
+  error?: string
+  returnTo?: string
+}
+
+export default function LoginForm({ initialSent, error, returnTo = '/' }: Props) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<Status>(initialSent ? 'sent' : 'idle')
 
@@ -14,7 +20,8 @@ export default function LoginForm({ initialSent, error }: { initialSent: boolean
     e.preventDefault()
     if (status === 'loading') return
     setStatus('loading')
-    const res = await signIn('resend', { email, redirect: false })
+    // redirectTo: the magic link drops the reader back where they started
+    const res = await signIn('resend', { email, redirect: false, redirectTo: returnTo })
     setStatus(res?.error ? 'error' : 'sent')
   }
 
