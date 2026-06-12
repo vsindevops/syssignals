@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
         destination: "/articles/:slug",
         permanent: true,
       },
+      // www -> apex
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.syssignals.com" }],
+        destination: "https://syssignals.com/:path*",
+        permanent: true,
+      },
     ];
   },
 };
