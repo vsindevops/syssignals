@@ -4,6 +4,7 @@ import './globals.css'
 import Analytics from '@/components/Analytics'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import ImageLightbox from '@/components/article/ImageLightbox'
 import { ProgressProvider } from '@/components/progress/ProgressProvider'
 import { getSearchIndex } from '@/lib/articles'
 
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1">{children}</main>
           <Footer />
         </ProgressProvider>
+        <ImageLightbox />
         <Analytics />
       </body>
     </html>
