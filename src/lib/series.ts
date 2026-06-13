@@ -75,9 +75,13 @@ export const SERIES: Record<string, SeriesInfo> = {
         blurb: 'Working on a hardened cluster: ephemeral containers, kubectl debug, node-level forensics.',
         days: [23],
       },
+      {
+        title: 'Configuration & Resources',
+        blurb: 'ConfigMaps and the env-vs-file update trap, with config edits that roll cleanly through GitOps.',
+        days: [24],
+      },
     ],
     upcoming: [
-      { day: 24, title: 'To be announced' },
       { day: 25, title: 'To be announced' },
       { day: 26, title: 'To be announced' },
       { day: 27, title: 'To be announced' },
