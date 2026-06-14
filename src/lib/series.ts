@@ -85,9 +85,13 @@ export const SERIES: Record<string, SeriesInfo> = {
         blurb: 'How the platform machinery works and how to extend it: Helm hooks and helm test for sequenced, verified releases, then CRDs and the operator pattern that powers every add-on you installed.',
         days: [27, 28],
       },
+      {
+        title: 'Resilience & Production',
+        blurb: 'Backup and disaster recovery with Velero — capturing resources and volume data, then proving a restore — leading into the production-readiness capstone.',
+        days: [29],
+      },
     ],
     upcoming: [
-      { day: 29, title: 'To be announced' },
       { day: 30, title: 'To be announced' },
     ],
   },
