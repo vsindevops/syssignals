@@ -77,12 +77,11 @@ export const SERIES: Record<string, SeriesInfo> = {
       },
       {
         title: 'Configuration & Resources',
-        blurb: 'ConfigMaps and the env-vs-file update trap, with config edits that roll cleanly through GitOps.',
-        days: [24],
+        blurb: 'ConfigMaps and the env-vs-file update trap; requests, limits, and the QoS class that decides who survives node pressure.',
+        days: [24, 25],
       },
     ],
     upcoming: [
-      { day: 25, title: 'To be announced' },
       { day: 26, title: 'To be announced' },
       { day: 27, title: 'To be announced' },
       { day: 28, title: 'To be announced' },
