@@ -81,13 +81,12 @@ export const SERIES: Record<string, SeriesInfo> = {
         days: [24, 25, 26],
       },
       {
-        title: 'Release Engineering',
-        blurb: 'Sequencing and verifying releases: Helm hooks for ordered migrations, helm test to prove a deploy works, and how it all maps onto Argo CD.',
-        days: [27],
+        title: 'Platform Engineering',
+        blurb: 'How the platform machinery works and how to extend it: Helm hooks and helm test for sequenced, verified releases, then CRDs and the operator pattern that powers every add-on you installed.',
+        days: [27, 28],
       },
     ],
     upcoming: [
-      { day: 28, title: 'To be announced' },
       { day: 29, title: 'To be announced' },
       { day: 30, title: 'To be announced' },
     ],
