@@ -8,7 +8,6 @@ import JsonLd, { articleJsonLd } from '@/components/JsonLd'
 import ReadingProgress from '@/components/article/ReadingProgress'
 import Toc from '@/components/article/Toc'
 import ArticleEnhancer from '@/components/article/ArticleEnhancer'
-import Comments from '@/components/article/Comments'
 import MarkComplete from '@/components/article/MarkComplete'
 import ViewCount from '@/components/article/ViewCount'
 import NewsletterForm from '@/components/NewsletterForm'
@@ -183,8 +182,6 @@ export default async function ArticlePage({ params }: Props) {
                     )}
                   </nav>
                 )}
-
-                <Comments slug={slug} />
               </footer>
             </div>
 

@@ -32,7 +32,7 @@ Think of the whole system as **four jobs**, each handled by something different:
 2. **Building** — A program (Next.js) turns those text files into finished web pages.
 3. **Hosting** — A rented computer on the internet (a VPS) runs the site 24/7.
 4. **Helping** — A handful of outside services do the specialised bits: sending
-   email, counting visitors, storing comments, remembering who's logged in.
+   email, counting visitors, remembering who's logged in.
 
 The clever part of the design is that **most pages are pre-built once** (like
 printing a magazine) rather than assembled fresh for every visitor (like cooking
@@ -84,9 +84,8 @@ Follow a single click. Someone opens `https://syssignals.com/articles/day-24-...
 4. The page arrives in the browser and then **enhances itself**: code blocks get a
    copy button, diagrams get drawn, the table-of-contents starts tracking your
    scroll, images become click-to-zoom.
-5. A few **outside helpers** load quietly: GoatCounter records the page view,
-   Giscus loads the comments when you scroll near them, and if you mark the day
-   complete, that fact is saved to our database.
+5. A few **outside helpers** load quietly: GoatCounter records the page view, and
+   if you mark the day complete, that fact is saved to our database.
 
 The key insight: steps 1–3 are mostly serving a **file that was printed in advance**.
 That's why it's fast. The "live" work is tiny — a cookie check.
@@ -170,10 +169,6 @@ us), which is why the mail lands in Inbox, not Spam.
 A lightweight, privacy-friendly visitor counter. Also powers the little "N views"
 chip on each article. Free.
 
-**Comments — Giscus.**
-Comments are stored as GitHub Discussions on the content repo. Readers sign in with
-GitHub to comment. Zero infrastructure for us to run. Free.
-
 **Hosting glue — Coolify on a Hetzner VPS, fronted by Cloudflare.**
 A **VPS** is a rented Linux computer. **Coolify** is a self-hosted control panel
 that turns "git push" into "rebuild and redeploy" automatically — like having your
@@ -196,7 +191,6 @@ only guaranteed bills are the server and the domain name.
 | DNS + CDN | Cloudflare | Free |
 | Login + newsletter email | Resend | Free tier |
 | Visitor analytics | GoatCounter | Free |
-| Comments | Giscus / GitHub | Free |
 | Code hosting | GitHub | Free |
 
 **Bottom line: roughly a VPS bill (~€4–8/mo) plus ~$10/year for the domain.**
@@ -216,7 +210,6 @@ invoice — confirm against the live account.)
 - Your progress follows you across devices once you sign in (and your guest progress
   is merged in automatically the first time you log in)
 - Live view counts per article
-- Comments (sign in with GitHub)
 - ⌘K instant search across all articles
 - A curriculum view grouping the 30 days into modules, with "upcoming" days shown
 - Newsletter signup
@@ -249,7 +242,7 @@ from nothing. We did it in roughly this sequence:
    buttons, client-rendered diagrams, mark-complete, ⌘K search.
 6. **Verify it actually works** by running it in a real browser and screenshotting.
 7. **Make it findable & shareable.** Generated OG share images, RSS, sitemap,
-   structured data; wired analytics and comments; added a newsletter signup.
+   structured data; wired analytics; added a newsletter signup.
 8. **Ship it.** Containerised with Docker, rented the VPS, installed Coolify,
    deployed, pointed the domain via Cloudflare, got HTTPS certificates.
 9. **Automate publishing.** One-command publish with a build gate, plus auto-deploy

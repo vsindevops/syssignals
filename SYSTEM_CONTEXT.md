@@ -10,8 +10,9 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-14 (added the architecture diagram §1b and created the
-> human-facing twin `HOW_IT_WORKS.md`; content through Day 24 + the image lightbox).
+> **Last updated:** 2026-06-14 (removed the Giscus comments feature; added the
+> architecture diagram §1b and the human-facing twin `HOW_IT_WORKS.md`; content
+> through Day 24 + the image lightbox).
 > **Confidence labels:** facts marked `[code]` are read directly from the repo;
 > `[infra]` are deployment/runtime facts not visible in source (verify against the
 > live VPS/Coolify before relying on exact numbers).
@@ -25,12 +26,12 @@ content is **"30 Days of DevOps"** — one hands-on Kubernetes/DevOps article pe
 curriculum "day". Articles are authored as Markdown in a **Jekyll repo** (source
 of truth), synced into a **Next.js 16 App Router** site that renders them as
 mostly-static pages with syntax highlighting, Mermaid diagrams, a click-to-zoom
-image lightbox, a table of contents, reading-progress tracking, and comments.
+image lightbox, a table of contents, and reading-progress tracking.
 Readers create accounts via **passwordless magic-link** auth; their completion
 progress syncs cross-device through **Postgres**. The site is containerised
 (Docker, Next standalone output) and deployed via **Coolify** on a **VPS**, with
 **Cloudflare** in front. SEO/distribution is handled with generated OG images,
-JSON-LD, RSS, and a sitemap. Analytics is **GoatCounter**, comments are **Giscus**.
+JSON-LD, RSS, and a sitemap. Analytics is **GoatCounter**.
 
 ---
 
@@ -91,11 +92,11 @@ Two flows: the **publish/build path** (author → live site, left-to-right) and 
    └───────────┼─────────────┼───────────┼──────────────────────────────────────────────────────────┘
                │             │           │
                ▼             ▼           ▼
-        ┌────────────┐ ┌───────────┐ ┌──────────────────────────────────┐
-        │   Resend   │ │ GoatCounter│ │  loaded in the browser directly: │
-        │ magic-link │ │ pageviews +│ │   • Giscus  (GitHub Discussions) │
-        │ + newsletter│ │ view counts│ │   • GoatCounter count.js          │
-        └────────────┘ └───────────┘ └──────────────────────────────────┘
+        ┌────────────┐ ┌────────────────────────────┐
+        │   Resend   │ │  GoatCounter               │
+        │ magic-link │ │  pageviews + view counts   │
+        │ + newsletter│ │  (count.js in the browser) │
+        └────────────┘ └────────────────────────────┘
 
    Rendering modes: most routes are prerendered Static/SSG (served from the container's
    filesystem); only /api/*, /login, and the OG-image routes run per-request (ƒ). See §5.
@@ -116,7 +117,7 @@ There are **two separate Git repos** with two different GitHub orgs/owners:
 
 | Repo | GitHub | Local path | Role |
 |---|---|---|---|
-| Jekyll content repo | `github.com/syssignals/30-days-devops` | `/Users/vishwas/30-days-devops` | **Source of truth for article Markdown.** Also hosts the GitHub **Discussions** that back Giscus comments. (Historically also served the old GitHub-Pages site.) |
+| Jekyll content repo | `github.com/syssignals/30-days-devops` | `/Users/vishwas/30-days-devops` | **Source of truth for article Markdown.** (Historically also served the old GitHub-Pages site.) |
 | Next.js site repo | `github.com/vsindevops/syssignals` | `/Users/vishwas/syssignals` | **The production website** (this repo). Deploys to syssignals.com. |
 
 Articles live in the Jekyll repo as `_posts/YYYY-MM-DD-day-NN-<slug>.md`. A sync
@@ -229,7 +230,7 @@ src/
     ├── layout/    Navbar, Footer, AccountMenu
     ├── home/      Hero, Terminal, SeriesShowcase, ContinueCard
     ├── article/   ArticleEnhancer, ImageLightbox, Toc, ReadingProgress,
-    │              MarkComplete, ViewCount, Comments
+    │              MarkComplete, ViewCount
     ├── series/    Curriculum
     ├── search/    SearchPalette (⌘K)
     ├── progress/  ProgressProvider (localStorage + server sync context)
@@ -323,8 +324,6 @@ Server sends static HTML; these client components progressively enhance it:
 - **`ReadingProgress`** — top progress bar.
 - **`MarkComplete`** — toggle completion (writes through `ProgressProvider`).
 - **`ViewCount`** — fetches the GoatCounter counter API for the slug.
-- **`Comments`** — Giscus, lazy-loaded via IntersectionObserver (600px rootMargin),
-  mapped by slug.
 
 ---
 
@@ -369,8 +368,6 @@ Server sends static HTML; these client components progressively enhance it:
 - **Analytics:** **GoatCounter** (`syssignals.goatcounter.com`), SPA-aware
   (`Analytics.tsx`, `no_onload`, per-navigation count). Public per-article
   view-count chip via the counter JSON API.
-- **Comments:** **Giscus** on GitHub Discussions of `syssignals/30-days-devops`
-  (`data-repo-id: R_kgDOSdLhDg`, category General, mapped by slug).
 - **Newsletter:** `/api/subscribe`; provider chosen by env — **Buttondown**
   (`BUTTONDOWN_API_KEY`) **or** **Resend audience** (`RESEND_API_KEY` +
   `RESEND_AUDIENCE_ID`). Honeypot field (`website`). Unconfigured → 503 + UI
@@ -452,7 +449,6 @@ the VPS and the domain.** Everything else runs on free tiers at current scale.
 | DNS / CDN | Cloudflare | **$0** | free plan |
 | Transactional + magic-link email | Resend | **$0** | free tier (~3k emails/mo, 100/day) — sufficient at current volume |
 | Analytics | GoatCounter (hosted) | **$0** | free / donation-ware |
-| Comments | Giscus + GitHub Discussions | **$0** | free |
 | Newsletter | Buttondown **or** Resend audience | **$0** | free tier |
 | Source hosting / CI of content | GitHub | **$0** | free |
 
@@ -473,7 +469,6 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
 - **Mark-as-complete** per article + **continue where you left off** (home card)
 - Cross-device progress sync for signed-in users; localStorage for anonymous
 - Public per-article **view counts** (GoatCounter)
-- **Comments** (Giscus, lazy-loaded)
 - **⌘K command-palette search** over titles/excerpts/tags
 - Series / **curriculum** view with modules and "upcoming" days
 - Newsletter signup (honeypot-protected)
@@ -508,6 +503,10 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
 
 ## 16. Change log (append new entries at top)
 
+- **2026-06-14** — **Removed the Giscus comments feature** (deleted
+  `src/components/article/Comments.tsx` and its use in the article page). No
+  external comment service remains; GitHub Discussions on the content repo are no
+  longer used by the site.
 - **2026-06-14** — Added **architecture diagram** (§1b: publish/build path +
   runtime request path + trust boundaries). Created human-facing twin
   **`HOW_IT_WORKS.md`** (narrative walkthrough for learning how the site is built).
