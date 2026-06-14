@@ -87,13 +87,11 @@ export const SERIES: Record<string, SeriesInfo> = {
       },
       {
         title: 'Resilience & Production',
-        blurb: 'Backup and disaster recovery with Velero — capturing resources and volume data, then proving a restore — leading into the production-readiness capstone.',
-        days: [29],
+        blurb: 'Backup and disaster recovery with Velero — capturing resources and volume data, then proving a restore — capped by the production-readiness checklist that maps every prior day onto a go/no-go review.',
+        days: [29, 30],
       },
     ],
-    upcoming: [
-      { day: 30, title: 'To be announced' },
-    ],
+    upcoming: [],
   },
 }
 
