@@ -80,9 +80,13 @@ export const SERIES: Record<string, SeriesInfo> = {
         blurb: 'ConfigMaps and the env-vs-file update trap; requests, limits, and the QoS class that decides who survives node pressure; right-sizing requests automatically with the Vertical Pod Autoscaler.',
         days: [24, 25, 26],
       },
+      {
+        title: 'Release Engineering',
+        blurb: 'Sequencing and verifying releases: Helm hooks for ordered migrations, helm test to prove a deploy works, and how it all maps onto Argo CD.',
+        days: [27],
+      },
     ],
     upcoming: [
-      { day: 27, title: 'To be announced' },
       { day: 28, title: 'To be announced' },
       { day: 29, title: 'To be announced' },
       { day: 30, title: 'To be announced' },
