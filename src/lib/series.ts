@@ -77,12 +77,11 @@ export const SERIES: Record<string, SeriesInfo> = {
       },
       {
         title: 'Configuration & Resources',
-        blurb: 'ConfigMaps and the env-vs-file update trap; requests, limits, and the QoS class that decides who survives node pressure.',
-        days: [24, 25],
+        blurb: 'ConfigMaps and the env-vs-file update trap; requests, limits, and the QoS class that decides who survives node pressure; right-sizing requests automatically with the Vertical Pod Autoscaler.',
+        days: [24, 25, 26],
       },
     ],
     upcoming: [
-      { day: 26, title: 'To be announced' },
       { day: 27, title: 'To be announced' },
       { day: 28, title: 'To be announced' },
       { day: 29, title: 'To be announced' },
