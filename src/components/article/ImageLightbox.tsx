@@ -80,7 +80,11 @@ export default function ImageLightbox() {
   const downAt = useRef<{ x: number; y: number } | null>(null)
   const dragged = useRef(false)
 
-  useEffect(() => setMounted(true), [])
+  // client-only portal guard; microtask defers past the effect body so it lands
+  // before paint without the synchronous-setState-in-effect smell
+  useEffect(() => {
+    queueMicrotask(() => setMounted(true))
+  }, [])
 
   const reset = useCallback(() => {
     setScale(1)
