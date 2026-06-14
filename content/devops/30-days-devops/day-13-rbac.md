@@ -220,9 +220,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: webapp-runtime
-  namespace: {% raw %}{{ .Release.Namespace }}{% endraw %}
+  namespace: {{ .Release.Namespace }}
   labels:
-    {% raw %}{{- include "webapp.labels" . | nindent 4 }}{% endraw %}
+    {{- include "webapp.labels" . | nindent 4 }}
 # nginx does not call the Kubernetes API. There is no reason for a
 # token to be available on disk inside the Pod, so we disable the
 # default automatic mount at the ServiceAccount level.
@@ -239,7 +239,7 @@ Open `webapp/templates/deployment.yaml` and locate the Pod `spec:` line (the inn
       serviceAccountName: webapp-runtime
       automountServiceAccountToken: false
       containers:
-        - name: {% raw %}{{ .Chart.Name }}{% endraw %}
+        - name: {{ .Chart.Name }}
           ...
 ```
 
@@ -249,13 +249,13 @@ The full Pod spec head should now look like this (the rest of the container spec
   template:
     metadata:
       labels:
-        {% raw %}{{- include "webapp.selectorLabels" . | nindent 8 }}{% endraw %}
+        {{- include "webapp.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: webapp-runtime
       automountServiceAccountToken: false
       containers:
-        - name: {% raw %}{{ .Chart.Name }}{% endraw %}
-          image: "{% raw %}{{ .Values.image.repository }}:{{ .Values.image.tag }}{% endraw %}"
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           # ... ports, probes, resources, envFrom (from Day 11) ...
 ```
 
@@ -334,7 +334,7 @@ A `ServiceAccount`, a `Role` (the permissions), and a `RoleBinding` (the link). 
 
 ```bash
 cat > webapp/templates/rbac-readonly.yaml << 'EOF'
-{% raw %}# ServiceAccount for read-only observers of the webapp.
+# ServiceAccount for read-only observers of the webapp.
 # Token mounting defaults to ON here — anything using this SA explicitly
 # wants to talk to the API server.
 apiVersion: v1
@@ -387,7 +387,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: webapp-observer
-{% endraw %}EOF
+EOF
 ```
 
 The three resources are separated by `---` document markers so Helm renders them as three independent manifests. Argo CD applies them in document order (SA → Role → RoleBinding), which is also the right dependency order — the RoleBinding references both of the first two.

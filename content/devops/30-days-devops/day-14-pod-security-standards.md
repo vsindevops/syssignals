@@ -260,14 +260,14 @@ This is the largest change. Open the file and make three additions to the Pod te
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: {% raw %}{{ .Chart.Name }}{% endraw %}
+        - name: {{ .Chart.Name }}
 ```
 
 **Addition B — Container-level `securityContext` and `volumeMounts`**, inside the `containers[0]` block, after the `resources:` field that Day 6 set and before the `envFrom:` block that Day 11 added:
 
 ```yaml
           resources:
-            {% raw %}{{- toYaml .Values.resources | nindent 12 }}{% endraw %}
+            {{- toYaml .Values.resources | nindent 12 }}
           # Container-level security context — strictest layer.
           # allowPrivilegeEscalation and capabilities can only be set here.
           securityContext:
@@ -309,8 +309,8 @@ The full post-edit `template.spec` (the Pod template's spec, not the Deployment 
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: {% raw %}{{ .Chart.Name }}{% endraw %}
-          image: "{% raw %}{{ .Values.image.repository }}:{{ .Values.image.tag }}{% endraw %}"
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           # ... ports / probes / resources (unchanged from earlier days) ...
           securityContext:
             allowPrivilegeEscalation: false

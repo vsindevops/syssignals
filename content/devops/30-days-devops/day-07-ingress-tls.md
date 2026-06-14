@@ -344,7 +344,7 @@ To check status:
   kubectl get pods -l "app.kubernetes.io/instance=webapp"
 ```
 
-(The NOTES block does not print the NodePort instructions this time — the `{% raw %}{{- if eq .Values.service.type "NodePort" }}{% endraw %}` conditional in the chart's `NOTES.txt` from Day 6 evaluates false.)
+(The NOTES block does not print the NodePort instructions this time — the `{{- if eq .Values.service.type "NodePort" }}` conditional in the chart's `NOTES.txt` from Day 6 evaluates false.)
 
 Verify the Service is ClusterIP and the pods are running:
 
@@ -894,7 +894,7 @@ sudo systemctl stop apache2     # Linux
 brew services stop nginx        # macOS
 
 # Then verify the kind cluster has the port mapping
-{% raw %}docker ps --filter "name=devops-cluster" --format "table {{.Names}}\t{{.Ports}}"{% endraw %}
+docker ps --filter "name=devops-cluster" --format "table {{.Names}}\t{{.Ports}}"
 # Should show 0.0.0.0:80->80/tcp and 0.0.0.0:443->443/tcp
 ```
 

@@ -112,7 +112,7 @@ flowchart LR
 
 The **"Without Helm"** subgraph (red boxes) shows the raw-YAML approach: one folder per environment, each containing a full copy of `deployment.yaml` and `service.yaml`. The differences between them are tiny — just a few fields like `replicas` and `image:tag` — but the **entire file** must be duplicated because YAML has no variable substitution. Notice there are no arrows inside this subgraph — each environment's files stand alone, with no shared source to keep them in sync. When you change a label across all environments, you edit three files. When the schema evolves, you edit three files. Drift is inevitable.
 
-The **"With Helm"** subgraph (green and blue boxes) shows the Helm approach. A single **chart** (blue) contains parameterised templates — the same `deployment.yaml` and `service.yaml`, but with placeholders like `{% raw %}{{ .Values.replicaCount }}{% endraw %}` instead of hard-coded numbers. Three small **values files** (green) supply just the differences for each environment. The three arrows from the values files into the chart represent each `helm install -f values-<env>.yaml` invocation feeding environment-specific overrides into the same shared chart at render time — Helm merges them over the chart's defaults to produce the final manifests. Updates to shared structure happen once, in the chart.
+The **"With Helm"** subgraph (green and blue boxes) shows the Helm approach. A single **chart** (blue) contains parameterised templates — the same `deployment.yaml` and `service.yaml`, but with placeholders like `{{ .Values.replicaCount }}` instead of hard-coded numbers. Three small **values files** (green) supply just the differences for each environment. The three arrows from the values files into the chart represent each `helm install -f values-<env>.yaml` invocation feeding environment-specific overrides into the same shared chart at render time — Helm merges them over the chart's defaults to produce the final manifests. Updates to shared structure happen once, in the chart.
 
 The key insight: Helm splits **structure** (templates, shared across environments) from **configuration** (values, unique per environment). You stop duplicating YAML and start composing it.
 
@@ -237,13 +237,13 @@ We keep `_helpers.tpl` (it contains useful name/label helpers) and `NOTES.txt` (
 
 Three template files: `deployment.yaml`, `service.yaml`, and an updated `NOTES.txt`. Then we will edit `values.yaml` to drive them.
 
-> **Seeing `{% raw %}{{ }}{% endraw %}`, `include`, and `nindent` for the first time? Don't let it
+> **Seeing `{{ }}`, `include`, and `nindent` for the first time? Don't let it
 > intimidate you.** The only part you author and care about is the
-> **`{% raw %}{{ .Values.* }}{% endraw %}`** placeholders — those pull values out of `values.yaml`.
+> **`{{ .Values.* }}`** placeholders — those pull values out of `values.yaml`.
 > The `include "webapp.*"` and `nindent` bits are standard Helm boilerplate that `helm create`
 > generated for you (they build the names and labels); leave them exactly as-is. Read each
 > template as *"ordinary Day 5 YAML, with the values that change between environments swapped out
-> for `{% raw %}{{ .Values.something }}{% endraw %}`."*
+> for `{{ .Values.something }}`."*
 
 ### deployment.yaml
 
@@ -252,50 +252,50 @@ cat > webapp/templates/deployment.yaml << 'EOF'
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {% raw %}{{ include "webapp.fullname" . }}{% endraw %}
+  name: {{ include "webapp.fullname" . }}
   labels:
-    {% raw %}{{- include "webapp.labels" . | nindent 4 }}{% endraw %}
+    {{- include "webapp.labels" . | nindent 4 }}
 spec:
-  replicas: {% raw %}{{ .Values.replicaCount }}{% endraw %}
+  replicas: {{ .Values.replicaCount }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: {% raw %}{{ .Values.rollingUpdate.maxSurge }}{% endraw %}
-      maxUnavailable: {% raw %}{{ .Values.rollingUpdate.maxUnavailable }}{% endraw %}
+      maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
   selector:
     matchLabels:
-      {% raw %}{{- include "webapp.selectorLabels" . | nindent 6 }}{% endraw %}
+      {{- include "webapp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {% raw %}{{- include "webapp.selectorLabels" . | nindent 8 }}{% endraw %}
+        {{- include "webapp.selectorLabels" . | nindent 8 }}
     spec:
       containers:
-        - name: {% raw %}{{ .Chart.Name }}{% endraw %}
-          image: "{% raw %}{{ .Values.image.repository }}:{{ .Values.image.tag }}{% endraw %}"
-          imagePullPolicy: {% raw %}{{ .Values.image.pullPolicy }}{% endraw %}
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {% raw %}{{ .Values.service.targetPort }}{% endraw %}
+              containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           readinessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: {% raw %}{{ .Values.probes.readiness.initialDelaySeconds }}{% endraw %}
-            periodSeconds: {% raw %}{{ .Values.probes.readiness.periodSeconds }}{% endraw %}
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
           livenessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: {% raw %}{{ .Values.probes.liveness.initialDelaySeconds }}{% endraw %}
-            periodSeconds: {% raw %}{{ .Values.probes.liveness.periodSeconds }}{% endraw %}
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
           resources:
-            {% raw %}{{- toYaml .Values.resources | nindent 12 }}{% endraw %}
+            {{- toYaml .Values.resources | nindent 12 }}
 EOF
 ```
 
-Every value with `{% raw %}{{ ... }}{% endraw %}` will be filled in from `values.yaml` at render time. The `include` calls pull in shared label and naming snippets defined in `_helpers.tpl` — these were generated by `helm create` and stay as-is.
+Every value with `{{ ... }}` will be filled in from `values.yaml` at render time. The `include` calls pull in shared label and naming snippets defined in `_helpers.tpl` — these were generated by `helm create` and stay as-is.
 
 ### service.yaml
 
@@ -304,40 +304,40 @@ cat > webapp/templates/service.yaml << 'EOF'
 apiVersion: v1
 kind: Service
 metadata:
-  name: {% raw %}{{ include "webapp.fullname" . }}{% endraw %}
+  name: {{ include "webapp.fullname" . }}
   labels:
-    {% raw %}{{- include "webapp.labels" . | nindent 4 }}{% endraw %}
+    {{- include "webapp.labels" . | nindent 4 }}
 spec:
-  type: {% raw %}{{ .Values.service.type }}{% endraw %}
+  type: {{ .Values.service.type }}
   ports:
-    - port: {% raw %}{{ .Values.service.port }}{% endraw %}
+    - port: {{ .Values.service.port }}
       targetPort: http
       protocol: TCP
       name: http
-      {% raw %}{{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}{% endraw %}
-      nodePort: {% raw %}{{ .Values.service.nodePort }}{% endraw %}
-      {% raw %}{{- end }}{% endraw %}
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
   selector:
-    {% raw %}{{- include "webapp.selectorLabels" . | nindent 4 }}{% endraw %}
+    {{- include "webapp.selectorLabels" . | nindent 4 }}
 EOF
 ```
 
-The `{% raw %}{{- if and ... }}{% endraw %}` block only emits the `nodePort` line if the service type is `NodePort` **and** a port number was set. This means the same template works for `ClusterIP` (internal) and `NodePort` (externally exposed) services.
+The `{{- if and ... }}` block only emits the `nodePort` line if the service type is `NodePort` **and** a port number was set. This means the same template works for `ClusterIP` (internal) and `NodePort` (externally exposed) services.
 
 ### NOTES.txt
 
 ```bash
 cat > webapp/templates/NOTES.txt << 'EOF'
-Release {% raw %}{{ .Release.Name }}{% endraw %} installed in namespace {% raw %}{{ .Release.Namespace }}{% endraw %}.
+Release {{ .Release.Name }} installed in namespace {{ .Release.Namespace }}.
 
 To check status:
-  kubectl get pods -l "app.kubernetes.io/instance={% raw %}{{ .Release.Name }}{% endraw %}"
+  kubectl get pods -l "app.kubernetes.io/instance={{ .Release.Name }}"
 
-{% raw %}{{- if eq .Values.service.type "NodePort" }}{% endraw %}
+{{- if eq .Values.service.type "NodePort" }}
 
-Your service is exposed on NodePort {% raw %}{{ .Values.service.nodePort }}{% endraw %}.
-Open: http://localhost:{% raw %}{{ .Values.service.nodePort }}{% endraw %}
-{% raw %}{{- end }}{% endraw %}
+Your service is exposed on NodePort {{ .Values.service.nodePort }}.
+Open: http://localhost:{{ .Values.service.nodePort }}
+{{- end }}
 EOF
 ```
 
@@ -1060,7 +1060,7 @@ python3 -c "import yaml; yaml.safe_load(open('values-dev.yaml'))"
 In this article you:
 
 - Generated a Helm chart with `helm create`, stripped it to essentials, and wrote your own templates from scratch
-- Parameterised the Day 5 Deployment and Service via `{% raw %}{{ .Values.* }}{% endraw %}` placeholders
+- Parameterised the Day 5 Deployment and Service via `{{ .Values.* }}` placeholders
 - Wrote a clean **default `values.yaml`** that drives every field your templates reference
 - Created two **environment-specific values files** (`values-dev.yaml`, `values-prod.yaml`) overriding only the fields that differ
 - Ran the full release lifecycle: `helm install` → `helm upgrade` → `helm rollback` → `helm uninstall`

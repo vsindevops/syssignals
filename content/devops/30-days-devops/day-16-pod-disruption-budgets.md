@@ -159,7 +159,7 @@ podDisruptionBudget:
 ### 1.2 — Create `webapp/templates/poddisruptionbudget.yaml`
 
 ```yaml
-{% raw %}{{- if .Values.podDisruptionBudget.enabled }}
+{{- if .Values.podDisruptionBudget.enabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -174,7 +174,7 @@ spec:
     matchLabels:
       {{- include "webapp.selectorLabels" . | nindent 6 }}
   minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
-{{- end }}{% endraw %}
+{{- end }}
 ```
 
 `apiVersion: policy/v1` is the stable PDB API since Kubernetes 1.21 — do not use the older `policy/v1beta1`, which was removed in 1.25.

@@ -53,6 +53,13 @@ for (const file of files) {
   // with a wrong date in the URL still resolve correctly).
   body = body.replace(/\(\/articles\/\d{4}\/\d{2}\/\d{2}\/([^)/\s]+)\/?\)/g, '(/articles/$1)')
 
+  // Strip Liquid {% raw %}/{% endraw %} guards. They exist only to stop Jekyll
+  // interpreting Go-template braces ({{ ... }}) in code blocks; the Next.js
+  // renderer doesn't process Liquid, so without this they'd render literally
+  // as visible "{% raw %}" tags. Removing them leaves the bare braces, which
+  // is exactly what the reader should see and copy.
+  body = body.replace(/\{%-?\s*raw\s*-?%\}/g, '').replace(/\{%-?\s*endraw\s*-?%\}/g, '')
+
   body = body.trim() + '\n'
 
   // Banner removal can leave a horizontal rule as the first line — drop it.

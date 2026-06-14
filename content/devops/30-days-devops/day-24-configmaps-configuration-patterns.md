@@ -363,7 +363,7 @@ appConfig:
 ### 4.2 — `webapp/templates/configmap.yaml` (new file)
 
 ```yaml
-{% raw %}{{- if .Values.appConfig.enabled }}
+{{- if .Values.appConfig.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -374,7 +374,7 @@ data:
   {{- range $key, $val := .Values.appConfig.data }}
   {{ $key }}: {{ $val | quote }}
   {{- end }}
-{{- end }}{% endraw %}
+{{- end }}
 ```
 
 ### 4.3 — `webapp/templates/deployment.yaml`: the annotation and the envFrom entry
@@ -382,26 +382,26 @@ data:
 Add a `checksum/config` annotation to the **Pod template's** `metadata.annotations` (alongside the labels already there). This is the standard Helm idiom — it hashes the rendered `configmap.yaml`, so any change to `appConfig.data` changes the hash:
 
 ```yaml
-{% raw %}  template:
+  template:
     metadata:
       labels:
         {{- include "webapp.selectorLabels" . | nindent 8 }}
       annotations:
         {{- if .Values.appConfig.enabled }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- end }}{% endraw %}
+        {{- end }}
 ```
 
 Then add the ConfigMap to the container's existing `envFrom` list, right beside Day 11's Secret:
 
 ```yaml
-{% raw %}          envFrom:
+          envFrom:
             - secretRef:
                 name: webapp-secret
             {{- if .Values.appConfig.enabled }}
             - configMapRef:
                 name: webapp-config
-            {{- end }}{% endraw %}
+            {{- end }}
 ```
 
 ### 4.4 — Enable in `webapp/values-dev.yaml`

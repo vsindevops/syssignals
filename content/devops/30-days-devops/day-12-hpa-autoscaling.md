@@ -264,16 +264,16 @@ Open `webapp/templates/deployment.yaml`. Find the line:
 
 ```yaml
 spec:
-  replicas: {% raw %}{{ .Values.replicaCount }}{% endraw %}
+  replicas: {{ .Values.replicaCount }}
 ```
 
 Replace it with this conditional block:
 
 ```yaml
 spec:
-  {% raw %}{{- if not .Values.autoscaling.enabled }}
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}{% endraw %}
+  {{- end }}
 ```
 
 This is the single most important detail in the whole article. **If the Deployment manifest contains `replicas: 3` while the HPA also patches `spec.replicas`, the two controllers fight every reconcile cycle.** Argo CD/Helm sees the live count drift away from 3 and sets it back. The HPA sees the live count is wrong and patches it again. The result is replica thrash and constant `OutOfSync` flapping in Argo CD.
@@ -285,7 +285,7 @@ By omitting the field entirely from the manifest when autoscaling is enabled, He
 Create `webapp/templates/hpa.yaml` with the following content:
 
 ```yaml
-{% raw %}{{- if .Values.autoscaling.enabled }}
+{{- if .Values.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -306,7 +306,7 @@ spec:
         target:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
-{{- end }}{% endraw %}
+{{- end }}
 ```
 
 Three things to note:

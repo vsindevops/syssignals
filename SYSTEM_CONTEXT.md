@@ -12,7 +12,8 @@
 >
 > **Last updated:** 2026-06-14 (removed the Giscus comments feature; added the
 > architecture diagram §1b and the human-facing twin `HOW_IT_WORKS.md`; content
-> through Day 24 + the image lightbox).
+> through Day 24 + the image lightbox; sync now strips Liquid `{% raw %}` guards
+> so they don't render as literals on the Next.js site — see §6).
 > **Confidence labels:** facts marked `[code]` are read directly from the repo;
 > `[infra]` are deployment/runtime facts not visible in source (verify against the
 > live VPS/Coolify before relying on exact numbers).
@@ -282,6 +283,8 @@ content/devops/30-days-devops/day-24-configmaps-configuration-patterns.md
    │  date, excerpt, tags, topics(=categories), series, seriesSlug, seriesTotal
    │  strips the Jekyll "> **30 Days of DevOps** …" banner blockquote
    │  rewrites links /articles/YYYY/MM/DD/<slug>/ → /articles/<slug>
+   │  strips Liquid {% raw %}/{% endraw %} guards (Jekyll-only; the Next
+   │    renderer isn't Liquid, so they'd otherwise render as visible literals)
    ▼  src/lib/articles.ts   (gray-matter + reading-time; sorts by day desc)
 ArticleMeta { slug, title, day, date, excerpt, tags, topics, series,
               seriesSlug, seriesTotal, readTime, readMinutes, words }

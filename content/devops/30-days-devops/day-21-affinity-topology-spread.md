@@ -564,7 +564,7 @@ topologySpread:
 Inside the Pod template's `spec:`, after the Day 13/14 `serviceAccountName` / `securityContext` block and before `initContainers:`, add:
 
 ```yaml
-{% raw %}      {{- if .Values.topologySpread.enabled }}
+      {{- if .Values.topologySpread.enabled }}
       topologySpreadConstraints:
         - maxSkew: {{ .Values.topologySpread.maxSkew }}
           topologyKey: kubernetes.io/hostname
@@ -572,7 +572,7 @@ Inside the Pod template's `spec:`, after the Day 13/14 `serviceAccountName` / `s
           labelSelector:
             matchLabels:
               {{- include "webapp.selectorLabels" . | nindent 14 }}
-      {{- end }}{% endraw %}
+      {{- end }}
 ```
 
 The `labelSelector` reuses the chart's `selectorLabels` helper — the same labels the Deployment selector, the Service, and the Day 16 PDB already agree on. The constraint counts exactly the Pods that are replicas of this release, nothing else.

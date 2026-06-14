@@ -529,7 +529,7 @@ verticalAutoscaler:
 ### 5.2 — `webapp/templates/vpa.yaml` (new, gated)
 
 ```yaml
-{% raw %}{{- if .Values.verticalAutoscaler.enabled }}
+{{- if .Values.verticalAutoscaler.enabled }}
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -543,7 +543,7 @@ spec:
     name: {{ include "webapp.fullname" . }}
   updatePolicy:
     updateMode: {{ .Values.verticalAutoscaler.updateMode | quote }}
-{{- end }}{% endraw %}
+{{- end }}
 ```
 
 ### 5.3 — Enable in `webapp/values-dev.yaml`, render-check, ship

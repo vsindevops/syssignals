@@ -204,7 +204,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: {% raw %}{{ .Values.image }}{% endraw %}
+          image: {{ .Values.image }}
           ports:
             - containerPort: 80
 ---
@@ -220,7 +220,7 @@ spec:
 EOF
 ```
 
-`app.yaml` is an ordinary templated manifest — `{% raw %}{{ .Values.image }}{% endraw %}` is a
+`app.yaml` is an ordinary templated manifest — `{{ .Values.image }}` is a
 normal Helm value, and it carries **no hook annotation**, so it is part of the
 release's regular resources (the green "②" in the diagram). Now the three hooks.
 **`hook-weight` orders multiple hooks in the same phase — lower runs first** — so the

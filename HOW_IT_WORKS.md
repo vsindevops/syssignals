@@ -98,8 +98,10 @@ Now the other direction — content going *out*:
 
 1. You write `2026-06-13-day-24-configmaps.md` in the **Jekyll repo**, in Markdown.
 2. You run **one command**: `npm run publish:day`. Behind the scenes it:
-   - **Copies** the article into the website repo, reshaping its metadata and
-     fixing up links (the `sync-content.mjs` script).
+   - **Copies** the article into the website repo, reshaping its metadata,
+     fixing up links, and stripping the `{% raw %}` markers the Jekyll source
+     uses to protect template braces (the website doesn't need them, and left in
+     they'd show up as literal text) — all in the `sync-content.mjs` script.
    - Runs a **full build** to make sure nothing is broken. *If the build fails, the
      publish stops here* — a broken site can't go live. The build is the safety gate.
    - **Commits and pushes** to GitHub.

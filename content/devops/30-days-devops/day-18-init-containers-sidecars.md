@@ -133,7 +133,7 @@ cd ~/30-days-devops/day-12/gitops-webapp
 Open `webapp/templates/deployment.yaml`. Immediately after the Pod-level `securityContext` block (added on Day 14) and before the `containers:` line, insert an `initContainers:` block:
 
 ```yaml
-{% raw %}      initContainers:
+      initContainers:
         # Ordinary init container: runs once, must exit 0 before anything
         # else starts. Renders the page nginx will serve, into the shared
         # emptyDir volume.
@@ -179,7 +179,7 @@ Open `webapp/templates/deployment.yaml`. Immediately after the Pod-level `securi
               drop: ["ALL"]
           volumeMounts:
             - name: shared-content
-              mountPath: /shared{% endraw %}
+              mountPath: /shared
 ```
 
 Both extra containers carry the same `securityContext` the main container got on Day 14 — `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `capabilities.drop: ["ALL"]` — because the `default` namespace enforces PSS `restricted` and **every container in the Pod is checked, init and sidecar included**. They inherit `runAsNonRoot`, `runAsUser: 101`, and the `seccompProfile` from the Pod-level `securityContext`. Writing to `/shared` works despite `readOnlyRootFilesystem: true` because `/shared` is a mounted `emptyDir`, not part of the read-only root filesystem.
@@ -189,11 +189,11 @@ Both extra containers carry the same `securityContext` the main container got on
 In the same file, add a `volumeMount` for `shared-content` to the nginx container (alongside the `/tmp` mount from Day 14), pointing at nginx's web root:
 
 ```yaml
-{% raw %}          volumeMounts:
+          volumeMounts:
             - name: tmp
               mountPath: /tmp
             - name: shared-content
-              mountPath: /usr/share/nginx/html{% endraw %}
+              mountPath: /usr/share/nginx/html
 ```
 
 Then add the new volume to the Pod's `volumes:` list (next to the `tmp` volume):
