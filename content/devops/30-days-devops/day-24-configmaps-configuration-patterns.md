@@ -347,9 +347,65 @@ cd ~/30-days-devops/day-12/gitops-webapp
 
 ### 4.1 — `webapp/values.yaml` defaults
 
-Append:
+Rewrite `webapp/values.yaml` with the full file below — your existing defaults plus a new
+`appConfig` block at the bottom:
 
-```yaml
+```bash
+cat > webapp/values.yaml << 'EOF'
+# Default values for webapp chart.
+# Override these from the CLI (--set) or from a values file (-f).
+
+replicaCount: 3
+
+image:
+  repository: nginx
+  tag: "1.25-alpine"
+  pullPolicy: IfNotPresent
+
+rollingUpdate:
+  maxSurge: 1
+  maxUnavailable: 0
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 80
+  nodePort: 30080
+
+probes:
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# Horizontal Pod Autoscaler defaults (Day 12).
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+
+# PodDisruptionBudget defaults (Day 16).
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 50%
+
+# Topology spread defaults (Day 21).
+topologySpread:
+  enabled: false
+  maxSkew: 1
+  whenUnsatisfiable: ScheduleAnyway
+
 # Application config delivered as a ConfigMap (non-secret companion to
 # webapp-secret from Day 11). Off by default; environments opt in.
 appConfig:
@@ -358,11 +414,13 @@ appConfig:
     APP_ENV: production
     LOG_LEVEL: info
     FEATURE_DARK_MODE: "false"
+EOF
 ```
 
 ### 4.2 — `webapp/templates/configmap.yaml` (new file)
 
-```yaml
+```bash
+cat > webapp/templates/configmap.yaml << 'EOF'
 {{- if .Values.appConfig.enabled }}
 apiVersion: v1
 kind: ConfigMap
@@ -375,13 +433,37 @@ data:
   {{ $key }}: {{ $val | quote }}
   {{- end }}
 {{- end }}
+EOF
 ```
 
 ### 4.3 — `webapp/templates/deployment.yaml`: the annotation and the envFrom entry
 
-Add a `checksum/config` annotation to the **Pod template's** `metadata.annotations` (alongside the labels already there). This is the standard Helm idiom — it hashes the rendered `configmap.yaml`, so any change to `appConfig.data` changes the hash:
+Rewrite `webapp/templates/deployment.yaml` with the full file below. Compared to your Day 21
+version it adds **two things**: a `checksum/config` annotation on the Pod template's
+`metadata.annotations` (the standard Helm idiom — it hashes the rendered `configmap.yaml`, so any
+change to `appConfig.data` changes the hash and rolls the Deployment), and a `configMapRef` entry
+in the container's `envFrom`, right beside Day 11's Secret:
 
-```yaml
+```bash
+cat > webapp/templates/deployment.yaml << 'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "webapp.fullname" . }}
+  labels:
+    {{- include "webapp.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "webapp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
@@ -390,11 +472,104 @@ Add a `checksum/config` annotation to the **Pod template's** `metadata.annotatio
         {{- if .Values.appConfig.enabled }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- end }}
-```
-
-Then add the ConfigMap to the container's existing `envFrom` list, right beside Day 11's Secret:
-
-```yaml
+    spec:
+      serviceAccountName: webapp-runtime
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.topologySpread.enabled }}
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.topologySpread.maxSkew }}
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: {{ .Values.topologySpread.whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              {{- include "webapp.selectorLabels" . | nindent 14 }}
+      {{- end }}
+      initContainers:
+        # Ordinary init container: runs once, must exit 0 before anything else
+        # starts. Renders the page nginx serves, into the shared volume.
+        - name: init-content
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              cat > /shared/index.html <<HTML
+              <!doctype html><html><body>
+              <h1>{{ .Chart.Name }}</h1>
+              <p>Rendered by the init container at $(date -u +%FT%TZ)</p>
+              </body></html>
+              HTML
+              echo "init-content: wrote /shared/index.html"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: shared-content
+              mountPath: /shared
+        # Native sidecar: an init container with restartPolicy: Always. It
+        # STARTS during the init phase (up before nginx) but never exits —
+        # the kubelet treats it as a long-lived sidecar.
+        - name: clock-sidecar
+          image: busybox:1.36
+          restartPolicy: Always          # <-- the one line that makes it a sidecar
+          command:
+            - sh
+            - -c
+            - |
+              while true; do
+                echo "ok $(date -u +%FT%TZ)" > /shared/health.txt
+                sleep 15
+              done
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: shared-content
+              mountPath: /shared
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: shared-content
+              mountPath: /usr/share/nginx/html
           envFrom:
             - secretRef:
                 name: webapp-secret
@@ -402,11 +577,58 @@ Then add the ConfigMap to the container's existing `envFrom` list, right beside 
             - configMapRef:
                 name: webapp-config
             {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: shared-content
+          emptyDir: {}
+EOF
 ```
 
 ### 4.4 — Enable in `webapp/values-dev.yaml`
 
-```yaml
+Rewrite `webapp/values-dev.yaml` with the full file below — your Day 21 dev values plus the
+`appConfig` block at the bottom:
+
+```bash
+cat > webapp/values-dev.yaml << 'EOF'
+# Dev environment overrides — merged over webapp/values.yaml at sync time.
+# Only include keys that differ from the chart defaults.
+
+replicaCount: 3
+
+# Day 14: unprivileged nginx image — runs as UID 101, listens on 8080.
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: "1.27-alpine"
+  pullPolicy: IfNotPresent
+
+# ClusterIP so traffic enters through the NGINX Ingress, not a NodePort.
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 50m
+    memory: 64Mi
+
+# Day 12: HPA on for the dev environment.
+autoscaling:
+  enabled: true
+
+# Day 16: PDB on for the dev environment.
+podDisruptionBudget:
+  enabled: true
+
+# Day 21: prefer even spread of webapp replicas across nodes.
+topologySpread:
+  enabled: true
+
 # Day 24: deliver app config via ConfigMap, with checksum-triggered rollouts.
 appConfig:
   enabled: true
@@ -414,6 +636,7 @@ appConfig:
     APP_ENV: dev
     LOG_LEVEL: debug
     FEATURE_DARK_MODE: "true"
+EOF
 ```
 
 ### 4.5 — Render-check: the ConfigMap and the checksum together
@@ -461,10 +684,56 @@ dev / debug / true
 
 (nginx itself ignores these variables — a real application would read them; this is the identical delivery mechanism Day 11's `API_KEY` and `DB_PASSWORD` use, ConfigMap for non-secret config, Secret for secret config.)
 
-**Now the payoff.** Change one value — `LOG_LEVEL: debug` → `LOG_LEVEL: trace` in `webapp/values-dev.yaml` — and watch the edit become a rollout:
+**Now the payoff.** Change one value — `LOG_LEVEL: debug` → `LOG_LEVEL: trace` — and watch the
+edit become a rollout. Rewrite `webapp/values-dev.yaml` with `trace` (the only change from 4.4):
 
 ```bash
-sed -i.bak 's/LOG_LEVEL: debug/LOG_LEVEL: trace/' webapp/values-dev.yaml
+cat > webapp/values-dev.yaml << 'EOF'
+# Dev environment overrides — merged over webapp/values.yaml at sync time.
+# Only include keys that differ from the chart defaults.
+
+replicaCount: 3
+
+# Day 14: unprivileged nginx image — runs as UID 101, listens on 8080.
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: "1.27-alpine"
+  pullPolicy: IfNotPresent
+
+# ClusterIP so traffic enters through the NGINX Ingress, not a NodePort.
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 50m
+    memory: 64Mi
+
+# Day 12: HPA on for the dev environment.
+autoscaling:
+  enabled: true
+
+# Day 16: PDB on for the dev environment.
+podDisruptionBudget:
+  enabled: true
+
+# Day 21: prefer even spread of webapp replicas across nodes.
+topologySpread:
+  enabled: true
+
+# Day 24: deliver app config via ConfigMap, with checksum-triggered rollouts.
+appConfig:
+  enabled: true
+  data:
+    APP_ENV: dev
+    LOG_LEVEL: trace
+    FEATURE_DARK_MODE: "true"
+EOF
 
 # The ConfigMap data changed → the rendered configmap.yaml changed →
 # the checksum changed → the Pod template changed. Prove it before syncing:
