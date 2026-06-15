@@ -17,6 +17,19 @@ That token is a credential. If the webapp container ever runs a vulnerable depen
 
 The fix has two parts: **stop handing out tokens nobody needs**, and **define explicit, narrowly scoped identities for the things that do**.
 
+> **Four terms, before you start:**
+> - **RBAC** (Role-Based Access Control) — Kubernetes' permission system. On every API call it
+>   answers one question: "is this caller allowed to do this verb on this resource?"
+> - **ServiceAccount (SA)** — an *identity for a Pod* (separate from the human login you use).
+>   Every Pod runs as one; by default it's the namespace's `default` SA, with an API token
+>   mounted inside it.
+> - **Role** — a list of allowed actions (verbs like `get`/`list`) on resources, scoped to one
+>   namespace. On its own it grants nothing — it's just a list.
+> - **RoleBinding** — the link that *actually grants* a Role's permissions to a subject (a SA or
+>   user). No binding ⇒ the Role does nothing.
+>
+> The whole chain in one line: **subject → RoleBinding → Role → verb-on-resource.**
+
 ## What you will build
 
 By the end of this article you will have:
@@ -232,31 +245,64 @@ EOF
 
 ### 2.2 — Patch `webapp/templates/deployment.yaml`
 
-Open `webapp/templates/deployment.yaml` and locate the Pod `spec:` line (the inner one, inside `template:`). Add two fields immediately under it:
+Rewrite `webapp/templates/deployment.yaml` with the full file below. It's your Day 12 template
+(conditional `replicas` + `envFrom`) with **two new lines** in the Pod `spec:` —
+`serviceAccountName: webapp-runtime` and `automountServiceAccountToken: false`:
 
-```yaml
-    spec:
-      serviceAccountName: webapp-runtime
-      automountServiceAccountToken: false
-      containers:
-        - name: {{ .Chart.Name }}
-          ...
-```
-
-The full Pod spec head should now look like this (the rest of the container spec is unchanged from Days 6 and 11):
-
-```yaml
+```bash
+cat > webapp/templates/deployment.yaml << 'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "webapp.fullname" . }}
+  labels:
+    {{- include "webapp.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "webapp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         {{- include "webapp.selectorLabels" . | nindent 8 }}
     spec:
+      # The webapp runs under its own SA and carries no API token (Day 13).
       serviceAccountName: webapp-runtime
       automountServiceAccountToken: false
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          # ... ports, probes, resources, envFrom (from Day 11) ...
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          envFrom:
+            - secretRef:
+                name: webapp-secret
+EOF
 ```
 
 ### 2.3 — Commit, push, sync
