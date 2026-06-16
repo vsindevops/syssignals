@@ -7,12 +7,14 @@ import { SERIES, PLANNED_SERIES } from '@/lib/series'
 
 export const metadata: Metadata = {
   title: 'Series',
-  description: 'Project-based learning tracks — 30 Days of DevOps, with MLOps and AI engineering on the way.',
+  description: 'Project-based learning tracks — 30 Days of DevOps and Python for AI Engineering, with MLOps and more on the way.',
 }
 
 export default function SeriesIndexPage() {
-  const series = SERIES['30-days-devops']
-  const articles = getSeriesArticles(series.slug)
+  const liveSeries = Object.values(SERIES).map(series => ({
+    series,
+    articles: getSeriesArticles(series.slug),
+  }))
 
   return (
     <div className="mx-auto max-w-6xl px-5 pt-14">
@@ -25,17 +27,19 @@ export default function SeriesIndexPage() {
         </p>
       </Reveal>
 
-      <Reveal className="mt-12">
-        <SeriesShowcase
-          name={series.name}
-          tagline={series.tagline}
-          level={series.level}
-          topics={series.topics}
-          total={series.total}
-          href={`/series/${series.slug}`}
-          days={articles.map(a => ({ day: a.day ?? 0, slug: a.slug, title: a.title }))}
-        />
-      </Reveal>
+      {liveSeries.map(({ series, articles }, i) => (
+        <Reveal key={series.slug} className={i === 0 ? 'mt-12' : 'mt-8'}>
+          <SeriesShowcase
+            name={series.name}
+            tagline={series.tagline}
+            level={series.level}
+            topics={series.topics}
+            total={series.total}
+            href={`/series/${series.slug}`}
+            days={articles.map(a => ({ day: a.day ?? 0, slug: a.slug, title: a.title }))}
+          />
+        </Reveal>
+      ))}
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         {PLANNED_SERIES.map((p, i) => (

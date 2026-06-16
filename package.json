@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "sync": "node scripts/sync-content.mjs",
-    "publish:day": "bash scripts/publish-day.sh"
+    "publish:day": "bash scripts/publish-day.sh",
+    "publish:py": "bash scripts/publish-python-day.sh"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.2",

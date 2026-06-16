@@ -64,6 +64,17 @@ into the website repo whenever you publish. You never hand-edit the copies — y
 edit the original and re-run the copy. (The copies live in `content/` and are
 treated as "generated", like a build output.)
 
+**The second series does it more simply.** Starting with *Python for AI
+Engineering* (2026-06-16), we learned the lesson from series 1: that two-repo
+copy step caused most of the small bugs (template markers showing up as literal
+text, a stray old site rebuilding and emailing failures). So the Python articles
+are written **directly inside this website repo**, under
+`content/python/python-for-ai-engineering/`. No second repo, no copy script —
+you edit the file that ships. The website already knew how to read any article
+in `content/`, so nothing else had to change. (The finished example programs for
+each Python day are kept in a separate `~/syssignals/Python-for-AI-Engineering/`
+folder, only so each one can be *run and checked* before it goes into the article.)
+
 ---
 
 ## 4. The life of a page view (what happens when someone reads an article)
@@ -112,6 +123,12 @@ Now the other direction — content going *out*:
 One manual touch-up: you slot the new day into its "module" in `src/lib/series.ts`
 so the curriculum page groups it nicely. If you forget, the site notices and shows
 it under a "Just shipped" section automatically — so nothing ever looks broken.
+
+**Publishing a Python day is the same idea, one step shorter.** Because those
+articles already live in this repo (no copy step), you just run
+`npm run publish:py`. It build-gates, commits and pushes exactly like the DevOps
+flow — there's simply no "copy from the other repo" stage. The same `series.ts`
+module touch-up and "Just shipped" safety net apply.
 
 ---
 

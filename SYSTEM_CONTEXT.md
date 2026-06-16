@@ -10,10 +10,14 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-14 (removed the Giscus comments feature; added the
-> architecture diagram §1b and the human-facing twin `HOW_IT_WORKS.md`; content
-> through Day 24 + the image lightbox; sync now strips Liquid `{% raw %}` guards
-> so they don't render as literals on the Next.js site — see §6).
+> **Last updated:** 2026-06-16 (added the second series, **Python for AI
+> Engineering** — a new live `seriesSlug` in `src/lib/series.ts`, content authored
+> directly under `content/python/python-for-ai-engineering/` with NO Jekyll/sync
+> layer, a dedicated `npm run publish:py` script, and the `/series` index +
+> showcase now iterating all live series. Earlier: removed the Giscus comments
+> feature; added the architecture diagram §1b and the human-facing twin
+> `HOW_IT_WORKS.md`; DevOps content through Day 30 + the image lightbox; sync
+> strips Liquid `{% raw %}` guards so they don't render as literals — see §6).
 > **Confidence labels:** facts marked `[code]` are read directly from the repo;
 > `[infra]` are deployment/runtime facts not visible in source (verify against the
 > live VPS/Coolify before relying on exact numbers).
@@ -506,6 +510,29 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
 
 ## 16. Change log (append new entries at top)
 
+- **2026-06-16** — **Launched a second series: "Python for AI Engineering"**
+  (30 days, beginner-first, project-per-day; covers Python basics → OOP →
+  errors/logging/files → envs → type hints/Pydantic → async → APIs → LLM
+  workflows (Claude/OpenAI/Gemini side-by-side) → NumPy/Pandas). Wiring:
+  (1) new `'python-for-ai-engineering'` entry in `src/lib/series.ts` SERIES
+  (full 10-module curriculum + 30 `upcoming` titles); (2) **content authored
+  directly** in `content/python/python-for-ai-engineering/py-day-NN-slug.md`
+  with correct frontmatter — **NO Jekyll source repo and NO sync step** (the
+  `articles.ts` loader already walks `content/**` and groups by frontmatter, so
+  the DevOps two-repo+`sync-content.mjs` indirection is deliberately dropped for
+  this series — it caused most of series 1's incidental bugs); (3) `py-day-NN`
+  slug prefix to avoid collision with DevOps `day-NN`; (4) new
+  `scripts/publish-python-day.sh` + `npm run publish:py` (build-gate → commit →
+  push → Coolify; no sync); (5) `/series` index and `SeriesShowcase` now iterate
+  `Object.values(SERIES)` so every live series shows (was hardcoded to DevOps);
+  `/series/[slug]`, `sitemap.ts`, and the article loader were already
+  series-agnostic. Project solution code for validation lives outside the site
+  repo at `~/syssignals/Python-for-AI-Engineering/day-NN/`. Day 1 published
+  locally; **homepage flagship still hardcodes `30-days-devops`** (a future
+  decision — see §… / docs). Authoring convention for this series: complete
+  files are shown as one editor-paste code block (NOT bash `cat > … EOF`
+  heredocs, which break for Windows beginners); per-OS shell variants given for
+  install/venv/run.
 - **2026-06-14** — **Removed the Giscus comments feature** (deleted
   `src/components/article/Comments.tsx` and its use in the article page). No
   external comment service remains; GitHub Discussions on the content repo are no
