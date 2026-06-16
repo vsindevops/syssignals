@@ -215,6 +215,24 @@ body {
 .prose-ss li + li { margin-top: 0.45em; }
 .prose-ss li > p + p { margin-top: 0.6em; }
 
+/* GFM task lists (checklists): the checkbox IS the marker — suppress the custom
+   ul bullet so items don't render as a doubled square-bullet + checkbox. */
+.prose-ss ul.contains-task-list { padding-left: 0; list-style: none; }
+.prose-ss li.task-list-item { position: relative; padding-left: 0; }
+.prose-ss li.task-list-item::before { content: none; }
+.prose-ss li.task-list-item > input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.02em;
+  height: 1.02em;
+  margin-right: 0.6rem;
+  vertical-align: -0.16em;
+  border: 1.5px solid var(--color-line-2);
+  border-radius: 4px;
+  background: var(--color-surface-2);
+  flex: none;
+}
+
 .prose-ss blockquote {
   border-left: 3px solid var(--color-accent);
   background: linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 7%, transparent), transparent 70%);
