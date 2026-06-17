@@ -10,9 +10,12 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-16 (free-preview gate: days 1–7 of every series + the
-> DevOps Day 30 capstone are public/SEO-indexable, day 8+ stays login-gated — see
-> §5/§15. Earlier same date:
+> **Last updated:** 2026-06-16 (technical-SEO pass: canonical URLs on every page,
+> sitemap lists only free/indexable URLs, richer JSON-LD (Article image +
+> Breadcrumb + WebSite/Organization), noindex on gated articles + /login, robots
+> disallows /api & /login; shared `src/lib/access.ts` is the single free/gated
+> source of truth. Earlier same date — free-preview gate: days 1–7 of every series +
+> the DevOps Day 30 capstone are public, day 8+ login-gated — see §5/§9/§15. Earlier:
 > added the second series, **Python for AI
 > Engineering** — a new live `seriesSlug` in `src/lib/series.ts`, content authored
 > directly under `content/python/python-for-ai-engineering/` with NO Jekyll/sync
@@ -376,8 +379,23 @@ Server sends static HTML; these client components progressively enhance it:
   (grid + glow + wordmark + day chip + title) via `next/og`/satori, loading the
   fontsource WOFFs from `node_modules`. Used by `/opengraph-image` and per-article
   `/articles/[slug]/opengraph-image`. The latter is **public** (gate-exempt).
-- **JSON-LD:** `JsonLd.tsx` emits `TechArticle` (per article) and `Course` (series).
-- **RSS:** `/feed.xml` route. **Sitemap:** `sitemap.ts`. **robots:** `robots.ts`.
+- **JSON-LD (`JsonLd.tsx`):** free articles emit `TechArticle` (with `image` =
+  the OG route, `datePublished`/`dateModified`, `mainEntityOfPage`, `wordCount`,
+  `inLanguage`, `isAccessibleForFree`) **+** a `BreadcrumbList` (Home › Series ›
+  Article). Series pages emit `Course`. The homepage emits a `WebSite` +
+  `Organization` `@graph` (`siteJsonLd`). Gated articles emit **no** structured data.
+- **Canonical URLs:** every page sets `alternates.canonical` (home, /about,
+  /articles, /series, /series/[slug], /articles/[slug]) so Cloudflare/trailing-slash/
+  query variants don't dilute ranking.
+- **Indexing control:** `src/lib/access.ts#isFreeSlug` is the single source of truth
+  shared by the gate, the sitemap, and article metadata. Gated articles set
+  `robots: noindex,nofollow` (belt-and-braces atop the login redirect); `/login` is
+  `noindex,follow`.
+- **RSS:** `/feed.xml` route. **Sitemap (`sitemap.ts`):** lists ONLY publicly-
+  readable URLs — home, /articles, /series + each `/series/[slug]`, /about, and only
+  **free** articles (gated ones are excluded so crawlers don't chase login redirects).
+  **robots (`robots.ts`):** allows `/`, disallows `/api/` and `/login`, declares
+  `host` + `sitemap`.
 - **Redirects (`next.config.ts`):** legacy Jekyll permalinks
   `/articles/YYYY/MM/DD/:slug` → `/articles/:slug` (permanent/308);
   `www.syssignals.com/*` → `https://syssignals.com/*` (permanent).
@@ -520,6 +538,17 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
 
 ## 16. Change log (append new entries at top)
 
+- **2026-06-16** — **Technical-SEO acceleration pass.** New `src/lib/access.ts`
+  (`isFreeSlug`) is now the single source of truth for free-vs-gated, imported by
+  `proxy.ts`, `sitemap.ts`, and article metadata. Sitemap now lists **only** free/
+  indexable URLs (was: all articles). Added `alternates.canonical` to every page;
+  `noindex` on gated articles and `/login`; `robots.ts` disallows `/api/` + `/login`
+  and declares `host`. Richer JSON-LD: Article gains `image`/`dateModified`/
+  `mainEntityOfPage`/`inLanguage`/`isAccessibleForFree`, plus a `BreadcrumbList` per
+  article and a `WebSite`+`Organization` graph on the homepage; gated articles emit
+  none. Verified locally (sitemap 9 free URLs, gated absent; canonical + noindex
+  present). **Still requires off-site action: submit sitemap in Google/Bing
+  webmaster tools (needs the user's accounts).**
 - **2026-06-16** — **Ungated the DevOps Day 30 capstone** as a free finale teaser.
   Added per-series `EXTRA_FREE_DAYS = { '': [30] }` to `src/proxy.ts`; slug parsing
   now returns `{prefix, day}` so the extra is DevOps-only (a future Python Day 30

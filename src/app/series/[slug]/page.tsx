@@ -15,7 +15,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const info = SERIES[slug]
   if (!info) return {}
-  return { title: info.name, description: info.tagline }
+  return {
+    title: info.name,
+    description: info.tagline,
+    alternates: { canonical: `/series/${slug}` },
+  }
 }
 
 export default async function SeriesPage({ params }: { params: Promise<{ slug: string }> }) {

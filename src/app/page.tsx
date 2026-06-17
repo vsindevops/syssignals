@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, TerminalSquare, CheckCircle2, Workflow, LifeBuoy } from 'lucide-react'
 import Hero from '@/components/home/Hero'
@@ -6,8 +7,13 @@ import SeriesShowcase from '@/components/home/SeriesShowcase'
 import ArticleCard from '@/components/ArticleCard'
 import NewsletterForm from '@/components/NewsletterForm'
 import Reveal from '@/components/motion/Reveal'
+import JsonLd, { siteJsonLd } from '@/components/JsonLd'
 import { getAllArticles, getSearchIndex, getSeriesArticles } from '@/lib/articles'
 import { SERIES } from '@/lib/series'
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+}
 
 const FORMAT = [
   {
@@ -42,6 +48,7 @@ export default function HomePage() {
 
   return (
     <>
+      <JsonLd data={siteJsonLd()} />
       <Hero
         stats={{
           published: seriesArticles.length,

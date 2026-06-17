@@ -4,6 +4,7 @@ import LoginForm from './LoginForm'
 export const metadata: Metadata = {
   title: 'Sign in',
   description: 'Sign in to Systems & Signals to sync your reading progress across devices.',
+  robots: { index: false, follow: true },
 }
 
 interface Props {

@@ -15,6 +15,13 @@ const PERSON = {
   sameAs: ['https://x.com/syssignals', 'https://github.com/syssignals'],
 }
 
+const PUBLISHER = {
+  '@type': 'Organization',
+  name: 'Systems & Signals',
+  url: 'https://syssignals.com',
+  logo: { '@type': 'ImageObject', url: 'https://syssignals.com/icon.svg' },
+}
+
 export function articleJsonLd(a: {
   slug: string
   title: string
@@ -26,21 +33,23 @@ export function articleJsonLd(a: {
   series?: string
   seriesSlug?: string
 }) {
+  const url = `https://syssignals.com/articles/${a.slug}`
   return {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: a.day !== undefined ? `Day ${a.day}: ${a.title}` : a.title,
     description: a.excerpt,
-    url: `https://syssignals.com/articles/${a.slug}`,
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    image: `${url}/opengraph-image`,
     datePublished: a.date,
+    dateModified: a.date,
+    inLanguage: 'en',
     wordCount: a.words,
     keywords: a.tags.join(', '),
     author: PERSON,
-    publisher: {
-      '@type': 'Organization',
-      name: 'Systems & Signals',
-      url: 'https://syssignals.com',
-    },
+    publisher: PUBLISHER,
+    isAccessibleForFree: true,
     ...(a.series && a.seriesSlug
       ? {
           isPartOf: {
@@ -50,6 +59,46 @@ export function articleJsonLd(a: {
           },
         }
       : {}),
+  }
+}
+
+/** BreadcrumbList for an article (Home › Series › Article). */
+export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.name,
+      item: it.url,
+    })),
+  }
+}
+
+/** Site-level WebSite + Organization identity (emit once, on the homepage). */
+export function siteJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': 'https://syssignals.com/#org',
+        name: 'Systems & Signals',
+        url: 'https://syssignals.com',
+        logo: 'https://syssignals.com/icon.svg',
+        founder: PERSON,
+        sameAs: ['https://x.com/syssignals', 'https://github.com/syssignals'],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://syssignals.com/#website',
+        name: 'Systems & Signals',
+        url: 'https://syssignals.com',
+        publisher: { '@id': 'https://syssignals.com/#org' },
+        inLanguage: 'en',
+      },
+    ],
   }
 }
 

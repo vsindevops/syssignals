@@ -8,6 +8,7 @@ import { SERIES, PLANNED_SERIES } from '@/lib/series'
 export const metadata: Metadata = {
   title: 'Series',
   description: 'Project-based learning tracks — 30 Days of DevOps and Python for AI Engineering, with MLOps and more on the way.',
+  alternates: { canonical: '/series' },
 }
 
 export default function SeriesIndexPage() {

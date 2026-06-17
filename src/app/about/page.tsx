@@ -18,6 +18,7 @@ const GitHubIcon = ({ size = 15 }: { size?: number }) => (
 export const metadata: Metadata = {
   title: 'About',
   description: 'Systems & Signals is built by Vishwas Sharma — project-based DevOps, MLOps and AI engineering content, published in public.',
+  alternates: { canonical: '/about' },
 }
 
 const PRINCIPLES = [

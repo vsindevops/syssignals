@@ -6,6 +6,7 @@ import { getAllArticles, getAllTags } from '@/lib/articles'
 export const metadata: Metadata = {
   title: 'Articles',
   description: 'Every published article — project-based DevOps, MLOps and AI engineering deep dives.',
+  alternates: { canonical: '/articles' },
 }
 
 export default function ArticlesPage() {

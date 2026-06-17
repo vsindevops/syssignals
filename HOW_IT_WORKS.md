@@ -265,7 +265,8 @@ from nothing. We did it in roughly this sequence:
    buttons, client-rendered diagrams, mark-complete, ⌘K search.
 6. **Verify it actually works** by running it in a real browser and screenshotting.
 7. **Make it findable & shareable.** Generated OG share images, RSS, sitemap,
-   structured data; wired analytics; added a newsletter signup.
+   structured data; wired analytics; added a newsletter signup. Later did a
+   dedicated **technical-SEO pass** (see the box below).
 8. **Ship it.** Containerised with Docker, rented the VPS, installed Coolify,
    deployed, pointed the domain via Cloudflare, got HTTPS certificates.
 9. **Automate publishing.** One-command publish with a build gate, plus auto-deploy
@@ -278,6 +279,34 @@ from nothing. We did it in roughly this sequence:
 
 Each step was verified before moving on, and each shippable chunk was committed to
 Git with a clear message — so the history itself is a record of how it was built.
+
+### Technical SEO, in plain English
+
+"SEO" (search engine optimisation) is just making it easy for Google to find,
+understand, and trust your pages. We don't chase tricks — we make the site honest
+and legible to crawlers:
+
+- **A sitemap that tells the truth.** `sitemap.xml` lists only the pages a visitor
+  can actually read without logging in (the free days). We deliberately *leave out*
+  the gated days, because pointing Google at pages that bounce it to a login wastes
+  its time and looks shady.
+- **Canonical links.** Each page declares its one "official" URL, so Google doesn't
+  treat `syssignals.com/x`, `/x?ref=...`, and `www.` versions as different pages
+  competing with each other.
+- **"Don't index this" labels.** Gated articles and the login page carry a polite
+  `noindex` tag, so they never show up in search results half-broken.
+- **Structured data (JSON-LD).** Invisible machine-readable tags that tell Google
+  "this is a technical article, here's its title/author/image/date", "this is a
+  course", "here's the breadcrumb trail". This is what can earn richer-looking
+  search results.
+- **One source of truth.** A single helper (`src/lib/access.ts`) decides what's free
+  vs. gated, and the gate, the sitemap, and the page tags all read from it — so they
+  can never disagree and accidentally leak or hide the wrong thing.
+
+What code *can't* do alone: search engines still have to be *told* the site exists.
+That's the off-site half — submitting the sitemap in **Google Search Console** and
+**Bing Webmaster Tools** (one-time, needs the owner's accounts) — after which Google
+crawls the sitemap on its own schedule.
 
 ---
 

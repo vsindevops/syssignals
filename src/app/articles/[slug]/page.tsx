@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CalendarDays, Clock, Layers } from 'lucide-react'
 import { getAllArticles, getArticle, getAdjacent } from '@/lib/articles'
+import { isFreeSlug } from '@/lib/access'
 import { renderMarkdown } from '@/lib/markdown'
-import JsonLd, { articleJsonLd } from '@/components/JsonLd'
+import JsonLd, { articleJsonLd, breadcrumbJsonLd } from '@/components/JsonLd'
 import ReadingProgress from '@/components/article/ReadingProgress'
 import Toc from '@/components/article/Toc'
 import ArticleEnhancer from '@/components/article/ArticleEnhancer'
@@ -24,12 +25,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const article = getArticle(slug)
   if (!article) return {}
+  const canonical = `/articles/${slug}`
+  const free = isFreeSlug(slug)
   return {
     title: article.day !== undefined ? `Day ${article.day}: ${article.title}` : article.title,
     description: article.excerpt,
+    keywords: article.tags,
+    alternates: { canonical },
+    // gated articles redirect to /login for crawlers anyway; this is belt-and-braces
+    robots: free ? undefined : { index: false, follow: false },
     openGraph: {
       title: article.title,
       description: article.excerpt,
+      url: canonical,
       type: 'article',
       publishedTime: article.date,
       tags: article.tags,
@@ -54,10 +62,25 @@ export default async function ArticlePage({ params }: Props) {
   const { prev, next } = getAdjacent(slug)
   const shareUrl = `https://syssignals.com/articles/${slug}`
   const shareText = `${article.day !== undefined ? `Day ${article.day}: ` : ''}${article.title} — by @syssignals`
+  const indexable = isFreeSlug(slug)
 
   return (
     <>
-      <JsonLd data={articleJsonLd(article)} />
+      {/* structured data only on indexable (free) articles */}
+      {indexable && (
+        <>
+          <JsonLd data={articleJsonLd(article)} />
+          <JsonLd
+            data={breadcrumbJsonLd([
+              { name: 'Home', url: 'https://syssignals.com' },
+              ...(article.series && article.seriesSlug
+                ? [{ name: article.series, url: `https://syssignals.com/series/${article.seriesSlug}` }]
+                : []),
+              { name: article.title, url: shareUrl },
+            ])}
+          />
+        </>
+      )}
       <ReadingProgress />
       <ArticleEnhancer slug={slug} hasMermaid={hasMermaid} />
 
