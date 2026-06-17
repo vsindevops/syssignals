@@ -239,7 +239,9 @@ invoice — confirm against the live account.)
 - Newsletter signup
 - Passwordless accounts (magic-link)
 - **Membership** — one plan unlocks every series (Monthly ₹399 / Annual ₹2,999 /
-  Lifetime ₹6,999), paid via Razorpay; the first 7 days of each series stay free
+  Lifetime ₹6,999), paid via Razorpay; the first 7 days of each series stay free.
+  Clicking a plan while logged out sends you to sign in (magic-link **or Google**),
+  then drops you straight back into checkout — no second click needed
 
 **For you / operations**
 - Write in Markdown, publish with one command (`npm run publish:day`)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Script from 'next/script'
 import { Check, Loader2 } from 'lucide-react'
@@ -21,12 +21,8 @@ export default function PricingTiers() {
   const [busy, setBusy] = useState<PlanId | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  async function buy(plan: PlanId) {
+  const buy = useCallback(async (plan: PlanId) => {
     setError(null)
-    if (user === false) {
-      router.push(`/login?callbackUrl=${encodeURIComponent('/pricing')}`)
-      return
-    }
     setBusy(plan)
     try {
       const res = await fetch('/api/checkout', {
@@ -34,6 +30,12 @@ export default function PricingTiers() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan }),
       })
+      // not signed in → send to sign-in/sign-up, then auto-resume this plan's
+      // checkout on return (standard SaaS flow). Server is the auth source of truth.
+      if (res.status === 401) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(`/pricing?checkout=${plan}`)}`)
+        return
+      }
       const data = await res.json()
       if (!res.ok) {
         setError(data.error ?? 'Could not start checkout.')
@@ -77,7 +79,20 @@ export default function PricingTiers() {
       setError('Network error — please try again.')
       setBusy(null)
     }
-  }
+  }, [router, user])
+
+  // Resume checkout after returning from sign-in (/pricing?checkout=<plan>).
+  const resumed = useRef(false)
+  useEffect(() => {
+    if (resumed.current) return
+    if (typeof user !== 'string') return // wait until the user is known-signed-in
+    const plan = new URLSearchParams(window.location.search).get('checkout')
+    if (plan && plan in TIERS) {
+      resumed.current = true
+      router.replace('/pricing') // clear the param so a refresh won't re-trigger
+      queueMicrotask(() => buy(plan as PlanId)) // defer setState out of the effect body
+    }
+  }, [user, buy, router])
 
   return (
     <>

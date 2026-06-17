@@ -1,7 +1,11 @@
 import NextAuth from 'next-auth'
 import Resend from 'next-auth/providers/resend'
+import Google from 'next-auth/providers/google'
 import PostgresAdapter from '@auth/pg-adapter'
 import { db } from '@/lib/db'
+
+/** Google SSO is enabled only when its OAuth credentials are present. */
+export const googleEnabled = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)
 
 const FROM = 'Systems & Signals <hello@syssignals.com>'
 
@@ -66,6 +70,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/login',
   },
   providers: [
+    ...(googleEnabled ? [Google({ allowDangerousEmailAccountLinking: true })] : []),
     Resend({
       apiKey: process.env.RESEND_API_KEY,
       from: FROM,

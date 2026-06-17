@@ -10,7 +10,8 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-17 (PAYMENTS LIVE — Razorpay live keys + plans set in
+> **Last updated:** 2026-06-17 (checkout-resume flow for logged-out users + Google
+> SSO provider added — see §8/§12. Earlier same day: PAYMENTS LIVE — Razorpay live keys + plans set in
 > Coolify; all 3 tiers verified creating real orders/subscriptions on prod; article
 > route now `force-dynamic` to fix a gated-page 500; annual cycles capped at 100.
 > Earlier same day: paid membership: Razorpay subscriptions + lifetime,
@@ -360,8 +361,15 @@ Server sends static HTML; these client components progressively enhance it:
 ## 8. Authentication & reading progress `[code]`
 
 **Auth (`src/auth.ts`):** Auth.js v5, **passwordless magic-link**.
-- Provider: **Resend** — `sendVerificationRequest` POSTs a hand-built HTML email
-  to `https://api.resend.com/emails` (from `Systems & Signals <hello@syssignals.com>`).
+- Providers: **Resend** magic-link — `sendVerificationRequest` POSTs a hand-built
+  HTML email to `https://api.resend.com/emails` (from `Systems & Signals
+  <hello@syssignals.com>`); **Google OAuth** (`next-auth/providers/google`) enabled
+  only when `AUTH_GOOGLE_ID`+`AUTH_GOOGLE_SECRET` are set (`googleEnabled` export),
+  with `allowDangerousEmailAccountLinking:true` so a Google sign-in links to an
+  existing same-email account. Login page shows the Google button conditionally.
+- **Checkout resume:** logged-out plan click → `/api/checkout` 401 → redirect to
+  `/login?callbackUrl=/pricing?checkout=<plan>`; after auth, `PricingTiers` reads
+  `?checkout=` and auto-opens Razorpay (standard SaaS flow).
 - Adapter: `@auth/pg-adapter` over the `pg` pool → **database** session strategy
   (`maxAge` 30 days, `updateAge` 1 day rolling).
 - `trustHost: true`. Custom pages: `signIn:/login`, `verifyRequest:/login?sent=1`,
@@ -474,6 +482,8 @@ block if forgotten).
 | `AUTH_SECRET` | yes | Auth.js | session/JWT signing |
 | `AUTH_URL` / `trustHost` | yes (prod) | Auth.js | `trustHost:true` set in code |
 | `RESEND_API_KEY` | yes (magic-link) | `auth.ts`, `subscribe` | transactional email |
+| `AUTH_GOOGLE_ID` | optional | `auth.ts` | enables Google SSO button when present |
+| `AUTH_GOOGLE_SECRET` | optional | `auth.ts` | Google OAuth secret; redirect URI `/api/auth/callback/google` |
 | `RESEND_AUDIENCE_ID` | optional | `subscribe` | enables Resend-audience newsletter |
 | `BUTTONDOWN_API_KEY` | optional | `subscribe` | alternative newsletter provider |
 | `RAZORPAY_KEY_ID` | for payments | `razorpay.ts`, checkout | presence flips `paymentsLive` → paywall + Pricing nav on |
@@ -576,6 +586,14 @@ newsletter list, or a bigger VPS for traffic/Postgres.
 ---
 
 ## 16. Change log (append new entries at top)
+
+- **2026-06-17** — **Checkout resume + Google SSO.** Logged-out plan clicks now go
+  to `/login?callbackUrl=/pricing?checkout=<plan>` (server 401-driven, not a flaky
+  client check) and auto-open Razorpay after sign-in. Added **Google OAuth** provider
+  (dormant until `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` set; `allowDangerousEmailAccountLinking`
+  for same-email linking) + a "Continue with Google" button on `/login`. User must
+  create a Google OAuth app (redirect URI `https://syssignals.com/api/auth/callback/google`)
+  and set the two env vars in Coolify to activate it.
 
 - **2026-06-17** — **PAYMENTS WENT LIVE.** Razorpay **live** keys + two live Plans
   (monthly `plan_T2lkUIOXouKK1V`, annual `plan_T2lkUcUptDGDs4`) + webhook secret set

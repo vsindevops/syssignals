@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import LoginForm from './LoginForm'
+import { googleEnabled } from '@/auth'
 
 export const metadata: Metadata = {
   title: 'Sign in',
@@ -31,7 +32,7 @@ export default async function LoginPage({ searchParams }: Props) {
           </p>
         </div>
         <div className="mt-8">
-          <LoginForm initialSent={sent === '1'} error={error} returnTo={returnTo} />
+          <LoginForm initialSent={sent === '1'} error={error} returnTo={returnTo} googleEnabled={googleEnabled} />
         </div>
       </div>
     </div>
