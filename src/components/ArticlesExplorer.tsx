@@ -3,9 +3,12 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { ArrowRight, LayoutGrid, Clock3 } from 'lucide-react'
+import { ArrowRight, LayoutGrid, Clock3, ChevronDown } from 'lucide-react'
 import ArticleCard from '@/components/ArticleCard'
 import type { ArticleMeta } from '@/lib/articles'
+
+const PREVIEW_PER_SERIES = 6 // cards shown per series before "Show all"
+const LATEST_PAGE = 12 // cards shown in Latest before "Show more"
 
 interface SeriesRef {
   slug: string
@@ -24,6 +27,8 @@ type View = 'series' | 'latest'
 export default function ArticlesExplorer({ articles, tags, series }: Props) {
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [view, setView] = useState<View>('series')
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [latestLimit, setLatestLimit] = useState(LATEST_PAGE)
 
   const filtered = useMemo(
     () => (activeTag ? articles.filter(a => a.tags.includes(activeTag)) : articles),
@@ -105,44 +110,75 @@ export default function ArticlesExplorer({ articles, tags, series }: Props) {
         <p className="mt-20 text-center font-mono text-sm text-ink-mute">No articles match that topic yet.</p>
       ) : view === 'series' ? (
         <div className="mt-10 space-y-14">
-          {groups.map(g => (
-            <section key={g.slug}>
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <h2 className="font-display text-xl font-semibold text-ink">{g.name}</h2>
-                  <p className="mt-1 font-mono text-[11px] text-ink-mute">
-                    {g.items.length} article{g.items.length === 1 ? '' : 's'}
-                  </p>
+          {groups.map(g => {
+            const isOpen = expanded[g.slug] ?? false
+            const visible = isOpen ? g.items : g.items.slice(0, PREVIEW_PER_SERIES)
+            const hidden = g.items.length - visible.length
+            return (
+              <section key={g.slug}>
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <h2 className="font-display text-xl font-semibold text-ink">{g.name}</h2>
+                    <p className="mt-1 font-mono text-[11px] text-ink-mute">
+                      {g.items.length} article{g.items.length === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/series/${g.slug}`}
+                    className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-ink-dim transition-colors hover:text-accent"
+                  >
+                    View curriculum <ArrowRight size={14} />
+                  </Link>
                 </div>
-                <Link
-                  href={`/series/${g.slug}`}
-                  className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-ink-dim transition-colors hover:text-accent"
-                >
-                  View curriculum <ArrowRight size={14} />
-                </Link>
-              </div>
-              <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {g.items.map(a => (
-                  <ArticleCard key={a.slug} article={a} />
-                ))}
-              </div>
-            </section>
-          ))}
+                <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {visible.map(a => (
+                    <ArticleCard key={a.slug} article={a} />
+                  ))}
+                </div>
+                {(hidden > 0 || isOpen) && g.items.length > PREVIEW_PER_SERIES && (
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      onClick={() => setExpanded(e => ({ ...e, [g.slug]: !isOpen }))}
+                      className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-5 py-2.5 text-[13px] font-medium text-ink-dim transition-colors hover:border-line-2 hover:text-ink"
+                    >
+                      {isOpen ? 'Show less' : `Show all ${g.items.length} articles`}
+                      <ChevronDown
+                        size={15}
+                        className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                  </div>
+                )}
+              </section>
+            )
+          })}
         </div>
       ) : (
-        <motion.div layout className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {latest.map(a => (
-            <motion.div
-              key={a.slug}
-              layout
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            >
-              <ArticleCard article={a} showSeries />
-            </motion.div>
-          ))}
-        </motion.div>
+        <>
+          <motion.div layout className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {latest.slice(0, latestLimit).map(a => (
+              <motion.div
+                key={a.slug}
+                layout
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+              >
+                <ArticleCard article={a} showSeries />
+              </motion.div>
+            ))}
+          </motion.div>
+          {latest.length > latestLimit && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={() => setLatestLimit(n => n + LATEST_PAGE)}
+                className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-5 py-2.5 text-[13px] font-medium text-ink-dim transition-colors hover:border-line-2 hover:text-ink"
+              >
+                Show more <ChevronDown size={15} />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
