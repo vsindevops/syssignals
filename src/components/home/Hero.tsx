@@ -6,10 +6,14 @@ import { ArrowRight, BookOpen } from 'lucide-react'
 import Terminal from './Terminal'
 
 interface Stats {
-  published: number
-  total: number
+  articles: number
   hours: number
-  words: number
+  series: number
+}
+
+interface LatestBadge {
+  text: string
+  href: string
 }
 
 function SignalWave() {
@@ -39,7 +43,7 @@ function SignalWave() {
   )
 }
 
-export default function Hero({ stats }: { stats: Stats }) {
+export default function Hero({ stats, latest }: { stats: Stats; latest?: LatestBadge }) {
   const reduce = useReducedMotion()
   const fadeUp = (delay: number) => ({
     initial: reduce ? false : ({ opacity: 0, y: 24 } as const),
@@ -59,16 +63,18 @@ export default function Hero({ stats }: { stats: Stats }) {
 
       <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 pb-20 pt-16 md:pt-24 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
-          <motion.div {...fadeUp(0)}>
-            <Link
-              href="/series/30-days-devops"
-              className="chip !border-accent/25 !text-accent transition-colors hover:!border-accent/50"
-            >
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-green animate-pulse-dot" />
-              30 Days of DevOps — Day {stats.published} just shipped
-              <ArrowRight size={12} />
-            </Link>
-          </motion.div>
+          {latest && (
+            <motion.div {...fadeUp(0)}>
+              <Link
+                href={latest.href}
+                className="chip !border-accent/25 !text-accent transition-colors hover:!border-accent/50"
+              >
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-green animate-pulse-dot" />
+                {latest.text}
+                <ArrowRight size={12} />
+              </Link>
+            </motion.div>
+          )}
 
           <motion.h1
             {...fadeUp(0.08)}
@@ -87,11 +93,11 @@ export default function Hero({ stats }: { stats: Stats }) {
 
           <motion.div {...fadeUp(0.24)} className="mt-9 flex flex-wrap items-center gap-4">
             <Link
-              href="/series/30-days-devops"
+              href="/series"
               className="glow inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-[15px] font-semibold text-bg transition-transform hover:scale-[1.03] active:scale-[0.98]"
             >
               <BookOpen size={17} />
-              Start the curriculum
+              Explore the series
             </Link>
             <Link
               href="/articles"
@@ -104,9 +110,9 @@ export default function Hero({ stats }: { stats: Stats }) {
 
           <motion.dl {...fadeUp(0.34)} className="mt-12 flex gap-10 border-t border-line pt-6">
             {[
-              { v: `${stats.published}/${stats.total}`, k: 'days shipped' },
-              { v: `${stats.hours}h+`, k: 'of hands-on builds' },
-              { v: `${Math.round(stats.words / 1000)}k`, k: 'words, zero fluff' },
+              { v: `${stats.articles}`, k: 'hands-on articles' },
+              { v: `${stats.hours}h+`, k: 'of building' },
+              { v: `${stats.series}`, k: stats.series === 1 ? 'learning path' : 'learning paths' },
             ].map(s => (
               <div key={s.k}>
                 <dt className="sr-only">{s.k}</dt>

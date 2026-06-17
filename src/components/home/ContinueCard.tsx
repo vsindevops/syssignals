@@ -9,20 +9,26 @@ import type { SearchDoc } from '@/lib/articles'
  * "Continue where you left off" strip — appears once the reader has opened
  * at least one article on this device.
  */
-export default function ContinueCard({ docs, total }: { docs: SearchDoc[]; total: number }) {
+export default function ContinueCard({ docs }: { docs: SearchDoc[] }) {
   const { hydrated, lastRead, completed } = useProgress()
   if (!hydrated) return null
 
-  // Next unfinished lesson after the last-read one, falling back to last read.
-  const ordered = [...docs].sort((a, b) => (a.day ?? 0) - (b.day ?? 0))
-  const lastDoc = ordered.find(d => d.slug === lastRead)
+  const lastDoc = docs.find(d => d.slug === lastRead)
   if (!lastDoc) return null
 
+  // Stay within the last-read article's own series (day numbers collide across series).
+  const seriesDocs = docs
+    .filter(d => d.seriesSlug === lastDoc.seriesSlug)
+    .sort((a, b) => (a.day ?? 0) - (b.day ?? 0))
+
   const next =
-    ordered.find(d => (d.day ?? 0) > (lastDoc.day ?? 0) && !completed.includes(d.slug)) ??
+    seriesDocs.find(d => (d.day ?? 0) > (lastDoc.day ?? 0) && !completed.includes(d.slug)) ??
     (completed.includes(lastDoc.slug) ? null : lastDoc)
   const target = next ?? lastDoc
-  const pct = Math.round((completed.length / total) * 100)
+
+  const total = lastDoc.seriesTotal ?? seriesDocs.length
+  const doneInSeries = seriesDocs.filter(d => completed.includes(d.slug)).length
+  const pct = total > 0 ? Math.round((doneInSeries / total) * 100) : 0
 
   return (
     <section className="mx-auto -mt-6 max-w-6xl px-5 pb-4">

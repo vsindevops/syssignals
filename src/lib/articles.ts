@@ -74,6 +74,14 @@ export function getAllArticles(): ArticleMeta[] {
     .sort((a, b) => (b.day ?? 0) - (a.day ?? 0) || (a.date < b.date ? 1 : -1))
 }
 
+/** Articles sorted by real publish date, newest first (tiebreak: higher day). */
+export function getLatestArticles(limit?: number): ArticleMeta[] {
+  const sorted = listContentFiles()
+    .map(f => parseFile(f, false))
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.day ?? 0) - (a.day ?? 0)))
+  return limit ? sorted.slice(0, limit) : sorted
+}
+
 export function getArticle(slug: string): Article | null {
   const file = listContentFiles().find(f => f.slug === slug)
   return file ? parseFile(file, true) : null
@@ -103,12 +111,17 @@ export interface SearchDoc {
   excerpt: string
   tags: string[]
   readTime: string
+  series?: string
+  seriesSlug?: string
+  seriesTotal?: number
 }
 
 export function getSearchIndex(): SearchDoc[] {
-  return getAllArticles().map(({ slug, title, day, excerpt, tags, readTime }) => ({
-    slug, title, day, excerpt, tags, readTime,
-  }))
+  return getAllArticles().map(
+    ({ slug, title, day, excerpt, tags, readTime, series, seriesSlug, seriesTotal }) => ({
+      slug, title, day, excerpt, tags, readTime, series, seriesSlug, seriesTotal,
+    }),
+  )
 }
 
 export function getAllTags(): { tag: string; count: number }[] {

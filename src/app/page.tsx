@@ -3,13 +3,15 @@ import Link from 'next/link'
 import { ArrowRight, TerminalSquare, CheckCircle2, Workflow, LifeBuoy } from 'lucide-react'
 import Hero from '@/components/home/Hero'
 import ContinueCard from '@/components/home/ContinueCard'
-import SeriesShowcase from '@/components/home/SeriesShowcase'
+import { SeriesCard, PlannedSeriesCard } from '@/components/home/SeriesCard'
 import ArticleCard from '@/components/ArticleCard'
 import NewsletterForm from '@/components/NewsletterForm'
 import Reveal from '@/components/motion/Reveal'
 import JsonLd, { siteJsonLd } from '@/components/JsonLd'
-import { getAllArticles, getSearchIndex, getSeriesArticles } from '@/lib/articles'
-import { SERIES } from '@/lib/series'
+import { getAllArticles, getLatestArticles, getSearchIndex, getSeriesArticles } from '@/lib/articles'
+import { SERIES, PLANNED_SERIES } from '@/lib/series'
+
+const MAX_SERIES_ON_HOME = 4
 
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
@@ -40,39 +42,81 @@ const FORMAT = [
 
 export default function HomePage() {
   const all = getAllArticles()
-  const latest = all.slice(0, 6)
-  const series = SERIES['30-days-devops']
-  const seriesArticles = getSeriesArticles(series.slug)
+  const latest = getLatestArticles(6)
   const totalMinutes = all.reduce((s, a) => s + a.readMinutes, 0)
-  const totalWords = all.reduce((s, a) => s + a.words, 0)
+
+  // live series in declaration order (flagship first), with their published articles
+  const liveSeries = Object.values(SERIES).map(s => ({
+    info: s,
+    articles: getSeriesArticles(s.slug),
+  }))
+
+  // newest published article across all series → hero badge
+  const newest = latest[0]
+
+  // up to MAX_SERIES_ON_HOME cards: live series first, then planned to fill
+  const liveCards = liveSeries.map(({ info, articles }) => ({
+    slug: info.slug,
+    name: info.name,
+    tagline: info.tagline,
+    level: info.level,
+    topics: info.topics,
+    total: info.total,
+    publishedSlugs: articles.map(a => a.slug),
+  }))
+  const plannedSlots = Math.max(0, MAX_SERIES_ON_HOME - liveCards.length)
 
   return (
     <>
       <JsonLd data={siteJsonLd()} />
       <Hero
         stats={{
-          published: seriesArticles.length,
-          total: series.total,
+          articles: all.length,
           hours: Math.round(totalMinutes / 60),
-          words: totalWords,
+          series: liveSeries.length,
         }}
+        latest={
+          newest
+            ? {
+                text: `${newest.series ?? 'New'}${newest.day ? ` · Day ${newest.day}` : ''} just shipped`,
+                href: `/articles/${newest.slug}`,
+              }
+            : undefined
+        }
       />
 
-      <ContinueCard docs={getSearchIndex()} total={series.total} />
+      <ContinueCard docs={getSearchIndex()} />
 
-      {/* flagship series */}
+      {/* learning paths */}
       <section className="mx-auto mt-20 max-w-6xl px-5">
         <Reveal>
-          <SeriesShowcase
-            name={series.name}
-            tagline={series.tagline}
-            level={series.level}
-            topics={series.topics}
-            total={series.total}
-            href={`/series/${series.slug}`}
-            days={seriesArticles.map(a => ({ day: a.day ?? 0, slug: a.slug, title: a.title }))}
-          />
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">learning paths</p>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink">
+                Pick a series, build every day
+              </h2>
+            </div>
+            <Link
+              href="/series"
+              className="hidden items-center gap-1.5 text-sm font-medium text-ink-dim transition-colors hover:text-accent sm:flex"
+            >
+              All series <ArrowRight size={15} />
+            </Link>
+          </div>
         </Reveal>
+        <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          {liveCards.slice(0, MAX_SERIES_ON_HOME).map((c, i) => (
+            <Reveal key={c.slug} delay={(i % 2) * 0.07}>
+              <SeriesCard data={c} flagship={i === 0} />
+            </Reveal>
+          ))}
+          {PLANNED_SERIES.slice(0, plannedSlots).map((p, i) => (
+            <Reveal key={p.name} delay={((liveCards.length + i) % 2) * 0.07}>
+              <PlannedSeriesCard name={p.name} status={p.status} blurb={p.blurb} />
+            </Reveal>
+          ))}
+        </div>
       </section>
 
       {/* format */}
@@ -117,7 +161,7 @@ export default function HomePage() {
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {latest.map((a, i) => (
             <Reveal key={a.slug} delay={(i % 3) * 0.07}>
-              <ArticleCard article={a} />
+              <ArticleCard article={a} showSeries />
             </Reveal>
           ))}
         </div>
