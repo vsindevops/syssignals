@@ -2,7 +2,7 @@
 title: "Docker Compose for a Full Local Dev Stack — Node.js, PostgreSQL, Redis, and Nginx"
 day: 3
 date: "2026-05-15"
-excerpt: "Build a production-realistic local dev environment: Node.js REST API backed by PostgreSQL and Redis, fronted by Nginx — all wired together with health checks, named volumes, and dependency ordering."
+excerpt: "Docker Compose tutorial: run a full local dev stack — Node.js REST API, PostgreSQL, Redis, and Nginx — wired together with health checks, named volumes, and startup ordering."
 tags: ["docker","docker-compose","postgresql","redis","nginx","nodejs","devops","local-development"]
 topics: ["Docker"]
 series: "30 Days of DevOps"

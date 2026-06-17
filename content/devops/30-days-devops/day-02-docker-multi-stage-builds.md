@@ -2,7 +2,7 @@
 title: "Dockerize Any Application the Right Way — Multi-Stage Builds & Best Practices"
 day: 2
 date: "2026-05-14"
-excerpt: "Take a 1.2 GB naive image down to 47 MB with multi-stage builds, a distroless base, and a non-root runtime — and prove the security improvement with Docker Scout."
+excerpt: "Docker multi-stage build tutorial: shrink a 1.2 GB image to 47 MB with a distroless, non-root Dockerfile, and verify the security gains with Docker Scout. Dockerfile best practices."
 tags: ["docker","containers","dockerfile","multi-stage-builds","docker-compose","docker-scout","security","devops"]
 topics: ["Docker"]
 series: "30 Days of DevOps"

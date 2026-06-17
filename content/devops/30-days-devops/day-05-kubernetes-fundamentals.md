@@ -2,7 +2,7 @@
 title: "Kubernetes Fundamentals — Local Cluster with kind, Pods, Services, and Zero-Downtime Rollouts"
 day: 5
 date: "2026-05-16"
-excerpt: "Run a production-realistic Kubernetes cluster on your laptop with kind, deploy a containerised app, wire up liveness and readiness probes, and perform a zero-downtime rolling update — no cloud account needed."
+excerpt: "Kubernetes tutorial for beginners: run a local cluster with kind, deploy a containerised app, add liveness and readiness probes, and ship a zero-downtime rolling update — no cloud needed."
 tags: ["kubernetes","kind","kubectl","pods","deployments","services","health-probes","rolling-updates","devops"]
 topics: ["Kubernetes"]
 series: "30 Days of DevOps"

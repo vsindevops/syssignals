@@ -2,7 +2,7 @@
 title: "GitHub Actions CI/CD — Automated Build, Test, Scan, and Push on Every Commit"
 day: 4
 date: "2026-05-15"
-excerpt: "Ship a 3-job GitHub Actions pipeline that tests your Docker image, blocks bad code from merging, pushes to GHCR on every main merge, and scans for CVEs — all in under 2 minutes."
+excerpt: "GitHub Actions CI/CD tutorial: build a 3-job pipeline that tests your Docker image, blocks bad merges, scans for CVEs, and pushes to GHCR on every commit — in under 2 minutes."
 tags: ["github-actions","docker","ghcr","ci-cd","docker-scout","devops","automation"]
 topics: ["CI/CD"]
 series: "30 Days of DevOps"
