@@ -10,7 +10,10 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-16 (technical-SEO pass: canonical URLs on every page,
+> **Last updated:** 2026-06-17 (paid membership: Razorpay subscriptions + lifetime,
+> `subscriptions` table, entitlement-gated article pages with a `Paywall`, `/pricing`,
+> checkout + webhook routes, `paymentsLive` flag; `proxy.ts` removed — see §5/§8/§12/§13/§15.
+> Earlier: technical-SEO pass: canonical URLs on every page,
 > sitemap lists only free/indexable URLs, richer JSON-LD (Article image +
 > Breadcrumb + WebSite/Organization), noindex on gated articles + /login, robots
 > disallows /api & /login; shared `src/lib/access.ts` is the single free/gated
@@ -92,22 +95,24 @@ Two flows: the **publish/build path** (author → live site, left-to-right) and 
    │   ┌─────────────────────────────────────────────┐      ┌──────────────────────────────┐       │
    │   │   Next.js standalone container  (node :3000) │      │  Postgres container (:5432)  │       │
    │   │                                              │      │  users · accounts · sessions │       │
-   │   │   proxy.ts gate ── /articles/:slug+ ─────────┼─────►│  verification_token          │       │
-   │   │     cookie present? no → 307 /login          │ pg   │  progress · users.last_read  │       │
+   │   │   article page entitlement gate ───────────┼─────►│  verification_token          │       │
+   │   │     free? open · gated? need paid plan       │ pg   │  progress · users.last_read  │       │
+   │   │   /api/checkout · /api/webhooks/razorpay ────┼─────►│  subscriptions               │       │
    │   │                                              │ pool └──────────────────────────────┘       │
    │   │   SSG article HTML + RSC                     │                                              │
    │   │   /api/auth  /api/progress  /api/subscribe   │                                              │
+   │   │   /api/checkout  /api/checkout/verify        │                                              │
    │   │   /opengraph-image (satori, runtime)         │                                              │
    │   └───────┬─────────────┬───────────┬───────────┘                                              │
    │           │             │           │                                                          │
    └───────────┼─────────────┼───────────┼──────────────────────────────────────────────────────────┘
                │             │           │
                ▼             ▼           ▼
-        ┌────────────┐ ┌────────────────────────────┐
-        │   Resend   │ │  GoatCounter               │
-        │ magic-link │ │  pageviews + view counts   │
-        │ + newsletter│ │  (count.js in the browser) │
-        └────────────┘ └────────────────────────────┘
+        ┌────────────┐ ┌────────────────────────────┐ ┌──────────────────────────┐
+        │   Resend   │ │  GoatCounter               │ │  Razorpay                │
+        │ magic-link │ │  pageviews + view counts   │ │  subscriptions + orders  │
+        │ + newsletter│ │  (count.js in the browser) │ │  checkout.js + webhook   │
+        └────────────┘ └────────────────────────────┘ └──────────────────────────┘
 
    Rendering modes: most routes are prerendered Static/SSG (served from the container's
    filesystem); only /api/*, /login, and the OG-image routes run per-request (ƒ). See §5.
@@ -228,7 +233,7 @@ src/
 │       ├── auth/[...nextauth]/route.ts   # Auth.js handlers
 │       ├── progress/route.ts             # GET/POST reading progress
 │       └── subscribe/route.ts            # newsletter signup
-├── proxy.ts                      # middleware: gate /articles/:slug+ behind login
+│   (no middleware — gating is done in the article page server component)
 ├── auth.ts                       # Auth.js config (Resend magic-link, pg adapter)
 ├── lib/
 │   ├── articles.ts               # read content/, parse frontmatter, search index,
@@ -260,7 +265,11 @@ src/
 | `/` | Static | home |
 | `/about` | Static | |
 | `/articles` | Static | index + client-side explorer/filter |
-| `/articles/[slug]` | **SSG** (`generateStaticParams`) | one prerendered HTML per article; **days 1–7 (every series) + DevOps Day 30 public (SEO); day 8+ gated** by `proxy.ts` |
+| `/articles/[slug]` | **Free = SSG, gated = dynamic (ƒ)** | free days (1–7 + DevOps 30) prerendered & public; gated days render on demand with a server-side entitlement check → full body or `Paywall`. `generateStaticParams` returns only free slugs |
+| `/pricing` | Static | membership tiers + Razorpay Checkout (client) |
+| `/pricing/success` | Static (noindex) | post-purchase confirmation |
+| `/api/checkout`, `/api/checkout/verify` | Dynamic | start checkout (order/subscription) + verify signature |
+| `/api/webhooks/razorpay` | Dynamic | entitlement source of truth (HMAC-verified) |
 | `/articles/[slug]/opengraph-image` | Dynamic (ƒ) | per-article OG card; **PUBLIC** (gate exempts it) |
 | `/series`, `/series/[slug]` | Static | curriculum |
 | `/login` | Dynamic | magic-link form |
@@ -271,20 +280,19 @@ src/
 | `/api/progress` | Dynamic | GET/POST progress (auth required) |
 | `/api/subscribe` | Dynamic | newsletter |
 
-**Middleware (`src/proxy.ts`):** matcher `'/articles/:slug+'`. **Free preview:**
-days 1–`FREE_PREVIEW_DAYS` (currently **7**) of every series are fully public, PLUS
-any per-series `EXTRA_FREE_DAYS` (currently `{ '': [30] }` → the DevOps Day 30
-capstone). The slug is parsed into `{prefix, day}` (`''`=DevOps, `'py-'`=Python) so
-the rules are per-series. Public days are waved through so search engines can index
-them. Everything else does a fast **cookie-presence** check
-(`__Secure-authjs.session-token` or `authjs.session-token`); no cookie → 307
-redirect to `/login?callbackUrl=<path>`. `/.../opengraph-image` is exempt so social
-link-previews work. The session is only *validated against the DB* in the API
-routes; the gate is intentionally cheap so article pages stay statically served.
-To change how many days are free, edit `FREE_PREVIEW_DAYS` in `src/proxy.ts`.
-**Implication for local dev:** to preview a *gated* (day 8+)
-article you need a session cookie (any value passes the presence check, since the
-page itself does no server-side session validation).
+**Access model (no middleware — gating lives in the article page).** `src/lib/access.ts`
+decides free vs gated: `isFreeSlug(slug)` is true for days 1–`FREE_PREVIEW_DAYS`
+(currently **7**) of every series PLUS per-series `EXTRA_FREE_DAYS` (currently
+`{ '': [30] }` → DevOps Day 30). Slug parsed into `{prefix, day}` (`''`=DevOps,
+`'py-'`=Python). Used by the sitemap, article metadata, and the page.
+
+The **article page** (`src/app/articles/[slug]/page.tsx`) enforces access server-side:
+- **Free slug** → prerendered (SSG), full body, indexed. (`generateStaticParams` returns only free slugs.)
+- **Gated slug** → rendered on demand (dynamic). It reads the session (`auth()`) and:
+  - **Payments live** (`razorpayConfigured()` true): full body only if `userHasAccess(userId)` (active sub or lifetime); otherwise the `Paywall` (membership pricing). Body markdown is never rendered/sent to non-entitled users.
+  - **Payments not live** (no Razorpay keys — pre-launch): preserves prior behaviour — any signed-in account unlocks; anonymous sees a "sign in to continue" prompt.
+
+This `paymentsLive` flag (= `razorpayConfigured()`) also controls the **Pricing** nav link (shown only when live), so deploying the paywall code with no keys is a zero-regression no-op until keys are added in Coolify.
 
 ---
 
@@ -360,6 +368,7 @@ Server sends static HTML; these client components progressively enhance it:
 **no migration/SQL file exists in the repo**):
 - Auth.js standard: `users`, `accounts`, `sessions`, `verification_token`.
 - Custom additions: table `progress(user_id, slug)`; column `users.last_read`.
+- **`subscriptions`** (paid access): `(id, user_id, plan, status, razorpay_subscription_id, razorpay_order_id, razorpay_payment_id, current_end, created_at, updated_at)`. `plan` ∈ monthly|annual|lifetime; `status` ∈ created|active|cancelled|halted|completed|paused. Read by `src/lib/entitlement.ts` (`userHasAccess` / `getEntitlement`): access = a lifetime row with status active, OR a recurring row active with `current_end` in the future. Webhook keeps it current.
 - Queried in `src/app/api/progress/route.ts` and `src/lib/db.ts`.
 
 **Progress model (`ProgressProvider` + `/api/progress`):**
@@ -464,10 +473,16 @@ block if forgotten).
 | `RESEND_API_KEY` | yes (magic-link) | `auth.ts`, `subscribe` | transactional email |
 | `RESEND_AUDIENCE_ID` | optional | `subscribe` | enables Resend-audience newsletter |
 | `BUTTONDOWN_API_KEY` | optional | `subscribe` | alternative newsletter provider |
+| `RAZORPAY_KEY_ID` | for payments | `razorpay.ts`, checkout | presence flips `paymentsLive` → paywall + Pricing nav on |
+| `RAZORPAY_KEY_SECRET` | for payments | `razorpay.ts` | server-only; Basic-auth + signature verify |
+| `RAZORPAY_WEBHOOK_SECRET` | for payments | webhook route | HMAC-verifies `/api/webhooks/razorpay` |
+| `RAZORPAY_PLAN_MONTHLY` | for monthly plan | checkout | Razorpay Plan ID (recurring) |
+| `RAZORPAY_PLAN_ANNUAL` | for annual plan | checkout | Razorpay Plan ID (recurring) |
 | `NEXT_TELEMETRY_DISABLED` | infra | Dockerfile | set to 1 |
 
 `.env.local` (gitignored) currently sets `DATABASE_URL`, `AUTH_SECRET`,
-`RESEND_API_KEY`.
+`RESEND_API_KEY`. Razorpay vars are set in Coolify when payments go live
+(test keys for verification, live keys after KYC). **`paymentsLive` = `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` both present** — with them unset the site keeps the pre-launch model (sign-in unlocks Day 8+) and hides Pricing.
 
 ---
 
@@ -485,10 +500,14 @@ the VPS and the domain.** Everything else runs on free tiers at current scale.
 | Analytics | GoatCounter (hosted) | **$0** | free / donation-ware |
 | Newsletter | Buttondown **or** Resend audience | **$0** | free tier |
 | Source hosting / CI of content | GitHub | **$0** | free |
+| Payments | Razorpay | **~2% domestic / ~3% intl per sale** | variable, only on actual revenue; no fixed fee |
 
-**Net:** roughly **a VPS bill (~€4–€8/mo) + ~$10/yr domain**. Scaling triggers
-that would add cost: outgrowing the Resend free email tier, a newsletter list past
-the free provider tier, or needing a bigger VPS for traffic/Postgres.
+**Net:** roughly **a VPS bill (~€4–€8/mo) + ~$10/yr domain**, plus Razorpay's
+per-transaction % once revenue starts (a *variable* cost paid only on sales).
+Pricing tiers (in `src/lib/pricing.ts`): **Monthly ₹399 · Annual ₹2,999 · Lifetime
+₹6,999** (all-access; the first 7 days of each series stay free). Scaling triggers
+that would add fixed cost: outgrowing the Resend free email tier, a large
+newsletter list, or a bigger VPS for traffic/Postgres.
 
 ---
 
@@ -509,6 +528,10 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
 - **Passwordless magic-link accounts**
 - Generated **OG cards**, **RSS**, dark responsive design system
 
+- **Paid membership** (all-access): Monthly/Annual subscriptions + Lifetime one-time
+  via **Razorpay**; `/pricing` + per-article `Paywall`; entitlement synced to the
+  account. Gated behind `paymentsLive` so it's dormant until keys are set.
+
 **Author / ops-facing**
 - Jekyll → `sync` → `publish:day` pipeline with a **build gate**
 - Curriculum management via `src/lib/series.ts`
@@ -522,11 +545,18 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
    before writing framework-level code (`AGENTS.md`).
 2. **`content/` is generated** — never hand-edit; edit the Jekyll post + re-sync.
 3. **No SQL migrations in-repo** — the DB schema (Auth.js tables + `progress` +
-   `users.last_read`) was applied to the VPS Postgres by hand. Recreating the DB
-   requires re-deriving that schema (Auth.js pg-adapter schema + the two custom bits).
-4. **Article pages are login-gated from day 8 onward** by cookie presence; days
-   1–7 of every series (`FREE_PREVIEW_DAYS`), any `EXTRA_FREE_DAYS` (DevOps Day 30),
-   and OG images are public. Local previews of a *gated* article need a session cookie.
+   `users.last_read` + `subscriptions`) was applied to the VPS Postgres by hand.
+   Recreating the DB requires re-deriving that schema.
+4. **Article access is enforced in the page server component, not middleware**
+   (`proxy.ts` was removed). Free days (1–7 + DevOps 30) are static/public; gated
+   days are dynamic and render the body only after a server-side entitlement check.
+   When `paymentsLive` is false (no Razorpay keys) the gate falls back to
+   "signed-in unlocks". OG images stay public.
+5. **Razorpay = source of truth via webhook.** `/api/checkout/verify` activates
+   optimistically on the success callback, but `/api/webhooks/razorpay` (HMAC-verified)
+   is authoritative — especially for recurring renewals/cancellations. Webhook must be
+   configured in the Razorpay dashboard with `RAZORPAY_WEBHOOK_SECRET` and the events
+   listed in the route file. Recurring `current_end` comes from the webhook.
 5. **OG fonts + `content/`** are copied explicitly in the Dockerfile because Next
    output-tracing can't see `process.cwd()` disk reads — if either is removed, OG
    generation or article reads break at runtime only (not at build).
@@ -537,6 +567,16 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
 ---
 
 ## 16. Change log (append new entries at top)
+
+- **2026-06-17** — **Paid membership (Razorpay).** All-access model: Monthly ₹399 /
+  Annual ₹2,999 (Razorpay Subscriptions) + Lifetime ₹6,999 (one-time Order). New
+  `subscriptions` table; `src/lib/entitlement.ts`, `pricing.ts`, `razorpay.ts`;
+  routes `/api/checkout`, `/api/checkout/verify`, `/api/webhooks/razorpay`; pages
+  `/pricing` + `/pricing/success`; `Paywall` component. **Removed `proxy.ts`** —
+  gating moved into the article page server component (free = static/public, gated =
+  dynamic + server entitlement check). Guarded by `paymentsLive` (= Razorpay keys
+  present) so it deployed as a no-op; flips fully on when keys land in Coolify.
+  Pending: Razorpay test-mode E2E verification, then KYC → live keys/plans/webhook.
 
 - **2026-06-16** — **Technical-SEO acceleration pass.** New `src/lib/access.ts`
   (`isFreeSlug`) is now the single source of truth for free-vs-gated, imported by

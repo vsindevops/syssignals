@@ -9,14 +9,17 @@ import AccountMenu from '@/components/layout/AccountMenu'
 import SearchPalette from '@/components/search/SearchPalette'
 import type { SearchDoc } from '@/lib/articles'
 
-const LINKS = [
+const BASE_LINKS = [
   { href: '/series', label: 'Series' },
   { href: '/articles', label: 'Articles' },
   { href: '/about', label: 'About' },
 ]
 
-export default function Navbar({ searchDocs }: { searchDocs: SearchDoc[] }) {
+export default function Navbar({ searchDocs, showPricing }: { searchDocs: SearchDoc[]; showPricing?: boolean }) {
   const pathname = usePathname()
+  const LINKS = showPricing
+    ? [...BASE_LINKS.slice(0, 2), { href: '/pricing', label: 'Pricing' }, ...BASE_LINKS.slice(2)]
+    : BASE_LINKS
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)

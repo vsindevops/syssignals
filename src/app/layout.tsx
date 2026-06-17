@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer'
 import ImageLightbox from '@/components/article/ImageLightbox'
 import { ProgressProvider } from '@/components/progress/ProgressProvider'
 import { getSearchIndex } from '@/lib/articles'
+import { razorpayConfigured } from '@/lib/razorpay'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' })
 const grotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-grotesk', display: 'swap' })
@@ -36,12 +37,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const searchDocs = getSearchIndex()
+  const paymentsLive = razorpayConfigured()
 
   return (
     <html lang="en" className={`${inter.variable} ${grotesk.variable} ${jbmono.variable} h-full antialiased`}>
       <body className="min-h-screen flex flex-col">
         <ProgressProvider>
-          <Navbar searchDocs={searchDocs} />
+          <Navbar searchDocs={searchDocs} showPricing={paymentsLive} />
           <main className="flex-1">{children}</main>
           <Footer />
         </ProgressProvider>

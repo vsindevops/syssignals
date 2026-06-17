@@ -87,15 +87,16 @@ Follow a single click. Someone opens `https://syssignals.com/articles/day-24-...
 2. The request lands on the **VPS** (our rented Linux computer). A traffic cop
    program called **Traefik** (managed by Coolify) terminates HTTPS (the padlock)
    and forwards the request inward.
-3. The request reaches our **Next.js app** running in a container. Before the page
-   renders, a gatekeeper (`proxy.ts`) decides who gets in:
+3. The request reaches our **Next.js app** running in a container. The article page
+   itself decides who gets to read:
    - **The first 7 days of any series are free** — fully public, no login. This
      gives newcomers (and Google) a generous on-ramp. (The DevOps Day 30 finale is
      also free, as a payoff/teaser.)
-   - For the gated days it checks: *does this person have a login cookie?*
-     - **No cookie** → they're bounced to `/login` (and we remember which article
-       they wanted, so after signing in they land right back on it).
-     - **Has cookie** → the pre-built article HTML is served instantly.
+   - For the gated days, the server checks: *does this person have an active
+     membership?* If yes → the full article. If no → a **paywall** with the
+     membership options. The article text is never even sent to non-members.
+     (Before paid launch — while there are no payment keys — gated days simply ask
+     you to sign in, exactly as before.)
 4. The page arrives in the browser and then **enhances itself**: code blocks get a
    copy button, diagrams get drawn, the table-of-contents starts tracking your
    scroll, images become click-to-zoom.
@@ -237,6 +238,8 @@ invoice — confirm against the live account.)
 - A curriculum view grouping the 30 days into modules, with "upcoming" days shown
 - Newsletter signup
 - Passwordless accounts (magic-link)
+- **Membership** — one plan unlocks every series (Monthly ₹399 / Annual ₹2,999 /
+  Lifetime ₹6,999), paid via Razorpay; the first 7 days of each series stay free
 
 **For you / operations**
 - Write in Markdown, publish with one command (`npm run publish:day`)
@@ -362,15 +365,40 @@ npm run publish:day  # syncs, builds, commits, pushes → auto-deploys
 
 ---
 
+## 11b. How the money side works (membership)
+
+One membership unlocks **everything** — every day of every series, current and
+future. Three ways to pay: **Monthly (₹399)**, **Annual (₹2,999)**, or a one-time
+**Lifetime (₹6,999)**. The first 7 days of each series stay free forever, so people
+can try before they buy.
+
+- **Payments run through Razorpay** (India-native: UPI, cards, netbanking). Monthly
+  and Annual are *subscriptions* (auto-renew until cancelled); Lifetime is a single
+  payment. The site never sees card details — Razorpay handles all of that.
+- **How access is remembered:** a small `subscriptions` record is tied to your
+  account. When you open a paid lesson, the server quietly checks "does this person
+  have an active plan?" and only then sends the article. Because it's tied to the
+  account, your access works on every device you sign in on.
+- **The safety net:** Razorpay sends us a "webhook" (an automatic ping) whenever a
+  payment succeeds, renews, or is cancelled — that's the real source of truth, so
+  access turns on and off correctly even if a browser tab closes mid-payment.
+- **A safety switch:** all of this only activates once the Razorpay keys are set on
+  the server. Until then the site behaves exactly as before (sign-in unlocks),
+  so the paywall could be deployed safely ahead of go-live.
+
+To change prices, edit one file: `src/lib/pricing.ts`.
+
+---
+
 ## 12. The honest trade-offs (so future-you isn't surprised)
 
 - **The first 7 days of each series are free (plus the DevOps Day 30 finale); day
-  8+ needs a login.** This is the balance between SEO/reach and audience capture: the
-  free days are public so Google can index them and newcomers can sample the work,
-  while deeper days create a reason to sign up. Two knobs in `src/proxy.ts`:
+  8+ is members-only.** This is the balance between SEO/reach and earning: the free
+  days are public so Google can index them and newcomers can sample the work, while
+  the deeper days are the paid product. Two knobs in `src/lib/access.ts`:
   `FREE_PREVIEW_DAYS` (how many opening days are free) and `EXTRA_FREE_DAYS` (extra
-  always-free days per series, e.g. the Day 30 capstone). The free days *do* get
-  indexed by search engines; the gated ones deliberately don't.
+  always-free days, e.g. the Day 30 capstone). Free days get indexed; gated ones
+  deliberately don't.
 - **The database schema isn't scripted in the repo.** The tables were created by
   hand on the server. If the database ever needs rebuilding, that schema has to be
   recreated (it's documented in `SYSTEM_CONTEXT.md` §8).

@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CalendarDays, Clock, Layers } from 'lucide-react'
 import { getAllArticles, getArticle, getAdjacent } from '@/lib/articles'
 import { isFreeSlug } from '@/lib/access'
+import { auth } from '@/auth'
+import { userHasAccess } from '@/lib/entitlement'
+import { razorpayConfigured } from '@/lib/razorpay'
 import { renderMarkdown } from '@/lib/markdown'
 import JsonLd, { articleJsonLd, breadcrumbJsonLd } from '@/components/JsonLd'
 import ReadingProgress from '@/components/article/ReadingProgress'
@@ -12,13 +15,18 @@ import ArticleEnhancer from '@/components/article/ArticleEnhancer'
 import MarkComplete from '@/components/article/MarkComplete'
 import ViewCount from '@/components/article/ViewCount'
 import NewsletterForm from '@/components/NewsletterForm'
+import Paywall from '@/components/article/Paywall'
 
 interface Props {
   params: Promise<{ slug: string }>
 }
 
+// Only free articles are prerendered. Gated (Day 8+) render on demand so the
+// body is sent only after a server-side entitlement check.
 export function generateStaticParams() {
-  return getAllArticles().map(a => ({ slug: a.slug }))
+  return getAllArticles()
+    .filter(a => isFreeSlug(a.slug))
+    .map(a => ({ slug: a.slug }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -58,11 +66,28 @@ export default async function ArticlePage({ params }: Props) {
   const article = getArticle(slug)
   if (!article) notFound()
 
-  const { html, toc, hasMermaid } = await renderMarkdown(article.content)
+  const free = isFreeSlug(slug)
+  const paymentsLive = razorpayConfigured()
+
+  // Entitlement for gated lessons. Before payments go live (no Razorpay keys),
+  // we preserve today's behaviour — any signed-in account unlocks Day 8+. Once
+  // payments are live, it requires an active plan.
+  let entitled = free
+  let signedIn = false
+  if (!free) {
+    const session = await auth()
+    signedIn = !!session?.user?.id
+    if (!paymentsLive) entitled = signedIn
+    else entitled = signedIn ? await userHasAccess(session!.user.id) : false
+  }
+
+  // Only render/serve the body when entitled — otherwise the markdown never
+  // leaves the server.
+  const rendered = entitled ? await renderMarkdown(article.content) : null
   const { prev, next } = getAdjacent(slug)
   const shareUrl = `https://syssignals.com/articles/${slug}`
   const shareText = `${article.day !== undefined ? `Day ${article.day}: ` : ''}${article.title} — by @syssignals`
-  const indexable = isFreeSlug(slug)
+  const indexable = free
 
   return (
     <>
@@ -81,8 +106,8 @@ export default async function ArticlePage({ params }: Props) {
           />
         </>
       )}
-      <ReadingProgress />
-      <ArticleEnhancer slug={slug} hasMermaid={hasMermaid} />
+      {entitled && <ReadingProgress />}
+      {entitled && rendered && <ArticleEnhancer slug={slug} hasMermaid={rendered.hasMermaid} />}
 
       <div className="relative">
         <div className="bg-grid bg-grid-fade absolute inset-x-0 top-0 -z-10 h-[340px]" />
@@ -126,16 +151,23 @@ export default async function ArticlePage({ params }: Props) {
                   <span className="flex items-center gap-1.5"><Clock size={12} /> {article.readTime}</span>
                   <span>{Math.round(article.words / 100) / 10}k words</span>
                   <ViewCount slug={slug} />
-                  <span className="ml-auto">
-                    <MarkComplete slug={slug} day={article.day} />
-                  </span>
+                  {entitled && (
+                    <span className="ml-auto">
+                      <MarkComplete slug={slug} day={article.day} />
+                    </span>
+                  )}
                 </div>
               </header>
 
-              {/* body */}
-              <article className="prose-ss mt-10" dangerouslySetInnerHTML={{ __html: html }} />
+              {/* body — gated by entitlement */}
+              {entitled && rendered ? (
+                <article className="prose-ss mt-10" dangerouslySetInnerHTML={{ __html: rendered.html }} />
+              ) : (
+                <Paywall signedIn={signedIn} seriesName={article.series} slug={slug} paymentsLive={paymentsLive} />
+              )}
 
-              {/* footer */}
+              {/* footer (members only) */}
+              {entitled && (
               <footer className="mt-16 border-t border-line pt-8">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <MarkComplete slug={slug} day={article.day} />
@@ -206,14 +238,17 @@ export default async function ArticlePage({ params }: Props) {
                   </nav>
                 )}
               </footer>
+              )}
             </div>
 
-            {/* TOC rail */}
-            <aside className="hidden lg:block">
-              <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-8 pr-1">
-                <Toc entries={toc} />
-              </div>
-            </aside>
+            {/* TOC rail (members only) */}
+            {entitled && rendered && (
+              <aside className="hidden lg:block">
+                <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-8 pr-1">
+                  <Toc entries={rendered.toc} />
+                </div>
+              </aside>
+            )}
           </div>
         </div>
       </div>
