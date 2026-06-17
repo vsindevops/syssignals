@@ -382,9 +382,11 @@ can try before they buy.
 - **The safety net:** Razorpay sends us a "webhook" (an automatic ping) whenever a
   payment succeeds, renews, or is cancelled — that's the real source of truth, so
   access turns on and off correctly even if a browser tab closes mid-payment.
-- **A safety switch:** all of this only activates once the Razorpay keys are set on
-  the server. Until then the site behaves exactly as before (sign-in unlocks),
-  so the paywall could be deployed safely ahead of go-live.
+- **The safety switch (now flipped on):** everything stays dormant until the
+  Razorpay keys are set on the server. They're now set (live keys), so the paywall,
+  the Pricing page, and checkout are **live** — Monthly, Annual and Lifetime all
+  verified working end-to-end. (Before keys were added, the site simply behaved as
+  before, so the code shipped safely ahead of go-live.)
 
 To change prices, edit one file: `src/lib/pricing.ts`.
 

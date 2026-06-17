@@ -10,7 +10,10 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-17 (paid membership: Razorpay subscriptions + lifetime,
+> **Last updated:** 2026-06-17 (PAYMENTS LIVE — Razorpay live keys + plans set in
+> Coolify; all 3 tiers verified creating real orders/subscriptions on prod; article
+> route now `force-dynamic` to fix a gated-page 500; annual cycles capped at 100.
+> Earlier same day: paid membership: Razorpay subscriptions + lifetime,
 > `subscriptions` table, entitlement-gated article pages with a `Paywall`, `/pricing`,
 > checkout + webhook routes, `paymentsLive` flag; `proxy.ts` removed — see §5/§8/§12/§13/§15.
 > Earlier: technical-SEO pass: canonical URLs on every page,
@@ -265,7 +268,7 @@ src/
 | `/` | Static | home |
 | `/about` | Static | |
 | `/articles` | Static | index + client-side explorer/filter |
-| `/articles/[slug]` | **Free = SSG, gated = dynamic (ƒ)** | free days (1–7 + DevOps 30) prerendered & public; gated days render on demand with a server-side entitlement check → full body or `Paywall`. `generateStaticParams` returns only free slugs |
+| `/articles/[slug]` | **Dynamic (ƒ)** — `export const dynamic = 'force-dynamic'` | every article SSR per-request (free still fully indexable: canonical + JSON-LD). Gated days read the session for a server-side entitlement check → full body or `Paywall`. NOT static, because on-demand static generation forbids reading the session cookie (`DYNAMIC_SERVER_USAGE`) |
 | `/pricing` | Static | membership tiers + Razorpay Checkout (client) |
 | `/pricing/success` | Static (noindex) | post-purchase confirmation |
 | `/api/checkout`, `/api/checkout/verify` | Dynamic | start checkout (order/subscription) + verify signature |
@@ -548,10 +551,16 @@ newsletter list, or a bigger VPS for traffic/Postgres.
    `users.last_read` + `subscriptions`) was applied to the VPS Postgres by hand.
    Recreating the DB requires re-deriving that schema.
 4. **Article access is enforced in the page server component, not middleware**
-   (`proxy.ts` was removed). Free days (1–7 + DevOps 30) are static/public; gated
-   days are dynamic and render the body only after a server-side entitlement check.
-   When `paymentsLive` is false (no Razorpay keys) the gate falls back to
-   "signed-in unlocks". OG images stay public.
+   (`proxy.ts` was removed). The whole `/articles/[slug]` route is
+   `force-dynamic` (SSR per request) because the gated path reads the session
+   cookie — doing that under on-demand static generation throws
+   `DYNAMIC_SERVER_USAGE` (this caused a prod 500 before the fix; do NOT
+   reintroduce `generateStaticParams` here without also re-solving that). Free
+   days render their body unconditionally and stay indexable; gated days render
+   the body only after `userHasAccess`. When `paymentsLive` is false the gate
+   falls back to "signed-in unlocks". OG images stay public.
+   **Razorpay note:** Subscriptions is a separately-activated product; yearly
+   plans cap `total_count` at 100 (monthly uses 120) — see `Tier.cycles`.
 5. **Razorpay = source of truth via webhook.** `/api/checkout/verify` activates
    optimistically on the success callback, but `/api/webhooks/razorpay` (HMAC-verified)
    is authoritative — especially for recurring renewals/cancellations. Webhook must be
@@ -567,6 +576,20 @@ newsletter list, or a bigger VPS for traffic/Postgres.
 ---
 
 ## 16. Change log (append new entries at top)
+
+- **2026-06-17** — **PAYMENTS WENT LIVE.** Razorpay **live** keys + two live Plans
+  (monthly `plan_T2lkUIOXouKK1V`, annual `plan_T2lkUcUptDGDs4`) + webhook secret set
+  as Coolify env vars on the app; `paymentsLive` now true in prod → paywall, Pricing
+  nav, and checkout are active on syssignals.com. All 3 tiers verified creating real
+  Razorpay orders/subscriptions on prod (no charge). Two fixes during cutover:
+  (1) `/articles/[slug]` → `force-dynamic` (gated pages 500'd with
+  `DYNAMIC_SERVER_USAGE` because the entitlement check reads the session cookie under
+  on-demand static gen); `generateStaticParams` removed. (2) annual subscription
+  failed (Razorpay caps yearly `total_count` at 100, code used 120) → added
+  `Tier.cycles` (monthly 120 / annual 100). **User still to do:** create the Razorpay
+  webhook in the dashboard (URL `/api/webhooks/razorpay`, secret already in Coolify)
+  so recurring renewals/cancellations sync; initial purchases already work via the
+  verify callback.
 
 - **2026-06-17** — **Paid membership (Razorpay).** All-access model: Monthly ₹399 /
   Annual ₹2,999 (Razorpay Subscriptions) + Lifetime ₹6,999 (one-time Order). New
