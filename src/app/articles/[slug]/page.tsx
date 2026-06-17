@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CalendarDays, Clock, Layers } from 'lucide-react'
-import { getAllArticles, getArticle, getAdjacent } from '@/lib/articles'
+import { getArticle, getAdjacent } from '@/lib/articles'
 import { isFreeSlug } from '@/lib/access'
 import { auth } from '@/auth'
 import { userHasAccess } from '@/lib/entitlement'
@@ -21,13 +21,11 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
-// Only free articles are prerendered. Gated (Day 8+) render on demand so the
-// body is sent only after a server-side entitlement check.
-export function generateStaticParams() {
-  return getAllArticles()
-    .filter(a => isFreeSlug(a.slug))
-    .map(a => ({ slug: a.slug }))
-}
+// Rendered per-request: gated (Day 8+) lessons read the session cookie to do a
+// server-side entitlement check, which isn't allowed during static generation.
+// Free articles are still fully SSR'd (canonical + JSON-LD intact, indexable);
+// only the static *caching* is given up, which is negligible at this scale.
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
