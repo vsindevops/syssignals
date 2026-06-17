@@ -14,6 +14,8 @@ export interface Tier {
   recurring: boolean
   /** env var holding the Razorpay plan_id (recurring tiers only) */
   razorpayPlanEnv?: string
+  /** max billing cycles for the subscription. Razorpay caps yearly at 100. */
+  cycles?: number
   highlight?: boolean
   blurb: string
   perks: string[]
@@ -29,6 +31,7 @@ export const TIERS: Record<PlanId, Tier> = {
     cadence: 'per month',
     recurring: true,
     razorpayPlanEnv: 'RAZORPAY_PLAN_MONTHLY',
+    cycles: 120, // 10 years of monthly billing (auto-renews until cancelled)
     blurb: 'Full access, cancel anytime.',
     perks: ['Every series, all days', 'New series as they ship', 'Progress synced across devices'],
   },
@@ -39,6 +42,7 @@ export const TIERS: Record<PlanId, Tier> = {
     cadence: 'per year',
     recurring: true,
     razorpayPlanEnv: 'RAZORPAY_PLAN_ANNUAL',
+    cycles: 100, // Razorpay caps yearly subscriptions at 100 cycles
     highlight: true,
     blurb: 'Best value — about ₹250/month.',
     perks: ['Everything in Monthly', 'Save ~37% vs monthly', 'One payment a year'],

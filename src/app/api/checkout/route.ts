@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     if (!planId) {
       return NextResponse.json({ error: 'This plan is not configured yet.' }, { status: 503 })
     }
-    const sub = await createSubscription(planId, notes)
+    const sub = await createSubscription(planId, notes, tier.cycles)
     await db().query(
       `INSERT INTO subscriptions (user_id, plan, status, razorpay_subscription_id)
        VALUES ($1, $2, 'created', $3)`,
