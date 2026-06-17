@@ -90,8 +90,9 @@ Follow a single click. Someone opens `https://syssignals.com/articles/day-24-...
 3. The request reaches our **Next.js app** running in a container. Before the page
    renders, a gatekeeper (`proxy.ts`) decides who gets in:
    - **The first 7 days of any series are free** — fully public, no login. This
-     gives newcomers (and Google) a generous on-ramp.
-   - For day 8 and beyond it checks: *does this person have a login cookie?*
+     gives newcomers (and Google) a generous on-ramp. (The DevOps Day 30 finale is
+     also free, as a payoff/teaser.)
+   - For the gated days it checks: *does this person have a login cookie?*
      - **No cookie** → they're bounced to `/login` (and we remember which article
        they wanted, so after signing in they land right back on it).
      - **Has cookie** → the pre-built article HTML is served instantly.
@@ -334,12 +335,13 @@ npm run publish:day  # syncs, builds, commits, pushes → auto-deploys
 
 ## 12. The honest trade-offs (so future-you isn't surprised)
 
-- **The first 7 days of each series are free; day 8+ needs a login.** This is the
-  balance between SEO/reach and audience capture: the free days are public so Google
-  can index them and newcomers can sample the work, while deeper days create a reason
-  to sign up. The number of free days is one constant (`FREE_PREVIEW_DAYS` in
-  `src/proxy.ts`) — raise or lower it anytime. Note the free days *do* get indexed by
-  search engines; the gated ones deliberately don't.
+- **The first 7 days of each series are free (plus the DevOps Day 30 finale); day
+  8+ needs a login.** This is the balance between SEO/reach and audience capture: the
+  free days are public so Google can index them and newcomers can sample the work,
+  while deeper days create a reason to sign up. Two knobs in `src/proxy.ts`:
+  `FREE_PREVIEW_DAYS` (how many opening days are free) and `EXTRA_FREE_DAYS` (extra
+  always-free days per series, e.g. the Day 30 capstone). The free days *do* get
+  indexed by search engines; the gated ones deliberately don't.
 - **The database schema isn't scripted in the repo.** The tables were created by
   hand on the server. If the database ever needs rebuilding, that schema has to be
   recreated (it's documented in `SYSTEM_CONTEXT.md` §8).
