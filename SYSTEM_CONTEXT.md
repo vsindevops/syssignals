@@ -10,7 +10,9 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-16 (added the second series, **Python for AI
+> **Last updated:** 2026-06-16 (free-preview gate: days 1–7 of every series are now
+> public/SEO-indexable, day 8+ stays login-gated — see §5/§15. Earlier same date:
+> added the second series, **Python for AI
 > Engineering** — a new live `seriesSlug` in `src/lib/series.ts`, content authored
 > directly under `content/python/python-for-ai-engineering/` with NO Jekyll/sync
 > layer, a dedicated `npm run publish:py` script, and the `/series` index +
@@ -254,7 +256,7 @@ src/
 | `/` | Static | home |
 | `/about` | Static | |
 | `/articles` | Static | index + client-side explorer/filter |
-| `/articles/[slug]` | **SSG** (`generateStaticParams`) | one prerendered HTML per article; **gated** by `proxy.ts` |
+| `/articles/[slug]` | **SSG** (`generateStaticParams`) | one prerendered HTML per article; **days 1–7 public (SEO), day 8+ gated** by `proxy.ts` |
 | `/articles/[slug]/opengraph-image` | Dynamic (ƒ) | per-article OG card; **PUBLIC** (gate exempts it) |
 | `/series`, `/series/[slug]` | Static | curriculum |
 | `/login` | Dynamic | magic-link form |
@@ -265,12 +267,16 @@ src/
 | `/api/progress` | Dynamic | GET/POST progress (auth required) |
 | `/api/subscribe` | Dynamic | newsletter |
 
-**Middleware (`src/proxy.ts`):** matcher `'/articles/:slug+'`. Performs a fast
-**cookie-presence** check (`__Secure-authjs.session-token` or
-`authjs.session-token`). No cookie → 307 redirect to `/login?callbackUrl=<path>`.
-`/.../opengraph-image` is exempt so social link-previews work. The session is only
-*validated against the DB* in the API routes; the gate is intentionally cheap so
-article pages stay statically served. **Implication for local dev:** to preview an
+**Middleware (`src/proxy.ts`):** matcher `'/articles/:slug+'`. **Free preview:**
+days 1–`FREE_PREVIEW_DAYS` (currently **7**) are fully public — the day number is
+parsed from the `day-NN-...` slug and waved through, so search engines can index
+them. Everything else does a fast **cookie-presence** check
+(`__Secure-authjs.session-token` or `authjs.session-token`); no cookie → 307
+redirect to `/login?callbackUrl=<path>`. `/.../opengraph-image` is exempt so social
+link-previews work. The session is only *validated against the DB* in the API
+routes; the gate is intentionally cheap so article pages stay statically served.
+To change how many days are free, edit `FREE_PREVIEW_DAYS` in `src/proxy.ts`.
+**Implication for local dev:** to preview a *gated* (day 8+)
 article you need a session cookie (any value passes the presence check, since the
 page itself does no server-side session validation).
 
@@ -497,8 +503,9 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
 3. **No SQL migrations in-repo** — the DB schema (Auth.js tables + `progress` +
    `users.last_read`) was applied to the VPS Postgres by hand. Recreating the DB
    requires re-deriving that schema (Auth.js pg-adapter schema + the two custom bits).
-4. **Article pages are login-gated** by cookie presence; OG images are not. Local
-   article previews need a session cookie.
+4. **Article pages are login-gated from day 8 onward** by cookie presence; days
+   1–7 (`FREE_PREVIEW_DAYS` in `src/proxy.ts`) and OG images are public. Local
+   previews of a *gated* article need a session cookie.
 5. **OG fonts + `content/`** are copied explicitly in the Dockerfile because Next
    output-tracing can't see `process.cwd()` disk reads — if either is removed, OG
    generation or article reads break at runtime only (not at build).
@@ -510,6 +517,12 @@ the free provider tier, or needing a bigger VPS for traffic/Postgres.
 
 ## 16. Change log (append new entries at top)
 
+- **2026-06-16** — **Free-preview gate for SEO.** `src/proxy.ts` now lets the first
+  `FREE_PREVIEW_DAYS` (=7) days of **every** series through publicly (day number
+  parsed from the slug via `/(?:^|-)day-0*(\d+)-/`, so both `day-NN-` and
+  `py-day-NN-` resolve). Day 8+ stays login-gated by cookie presence; OG images
+  still public. Goal: let search engines index the on-ramp. Verified locally for
+  both series (devops 1/7 + python 1 → 200; devops 8/30 + python 8 → 307).
 - **2026-06-16** — **Launched a second series: "Python for AI Engineering"**
   (30 days, beginner-first, project-per-day; covers Python basics → OOP →
   errors/logging/files → envs → type hints/Pydantic → async → APIs → LLM
