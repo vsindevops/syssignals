@@ -2,9 +2,20 @@ import Link from 'next/link'
 import { Clock } from 'lucide-react'
 import type { ArticleMeta } from '@/lib/articles'
 
-export default function ArticleCard({ article }: { article: ArticleMeta }) {
+export default function ArticleCard({
+  article,
+  showSeries = false,
+}: {
+  article: ArticleMeta
+  showSeries?: boolean
+}) {
   return (
     <Link href={`/articles/${article.slug}`} className="card card-hover group flex h-full flex-col p-6">
+      {showSeries && article.series && (
+        <span className="mb-3 block truncate font-mono text-[10.5px] uppercase tracking-wider text-ink-mute">
+          {article.series}
+        </span>
+      )}
       <div className="flex items-center gap-3">
         {article.day !== undefined && (
           <span className="chip !border-accent/25 !text-accent">DAY {String(article.day).padStart(2, '0')}</span>

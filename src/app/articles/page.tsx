@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Reveal from '@/components/motion/Reveal'
 import ArticlesExplorer from '@/components/ArticlesExplorer'
 import { getAllArticles, getAllTags } from '@/lib/articles'
+import { SERIES } from '@/lib/series'
 
 export const metadata: Metadata = {
   title: 'Articles',
@@ -13,6 +14,11 @@ export default function ArticlesPage() {
   const articles = getAllArticles()
   const tags = getAllTags()
   const totalMin = articles.reduce((s, a) => s + a.readMinutes, 0)
+  // series in flagship-first order, limited to ones that actually have articles
+  const present = new Set(articles.map(a => a.seriesSlug))
+  const series = Object.values(SERIES)
+    .filter(s => present.has(s.slug))
+    .map(s => ({ slug: s.slug, name: s.name }))
 
   return (
     <div className="mx-auto max-w-6xl px-5 pt-14">
@@ -26,7 +32,7 @@ export default function ArticlesPage() {
       </Reveal>
 
       <div className="mt-10">
-        <ArticlesExplorer articles={articles} tags={tags} />
+        <ArticlesExplorer articles={articles} tags={tags} series={series} />
       </div>
     </div>
   )
