@@ -28,7 +28,9 @@ if ! grep -E "days: \[[0-9, ]*\b${newest}\b" src/lib/series.ts > /dev/null; then
   echo ""
 fi
 
-if git diff --quiet && git diff --cached --quiet; then
+# Use porcelain (not `git diff`) so brand-new UNTRACKED articles count too —
+# a Python day often adds only a new file with no tracked-file changes.
+if [ -z "$(git status --porcelain)" ]; then
   echo "==> nothing new to publish"
   exit 0
 fi
