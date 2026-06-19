@@ -242,6 +242,10 @@ invoice — confirm against the live account.)
   Lifetime ₹6,999), paid via Razorpay; the first 7 days of each series stay free.
   Clicking a plan while logged out sends you to sign in (magic-link **or Google**),
   then drops you straight back into checkout — no second click needed
+- **Account settings** (`/settings`) — edit your profile (name, current role, bio,
+  LinkedIn, X, GitHub) and manage your membership: see your plan and renewal date,
+  switch plans, or cancel (a recurring plan stays active until the period you paid
+  for ends — no surprise cut-off). Lifetime members just see "yours forever."
 
 **For you / operations**
 - Write in Markdown, publish with one command (`npm run publish:day`)
