@@ -28,17 +28,23 @@ export interface EntitlementSummary {
   plan: string | null
   status: string | null
   currentEnd: string | null
+  recurring: boolean
+  cancelScheduled: boolean
+  subscriptionId: string | null
 }
 
-/** Best current entitlement for display (account menu, etc.). */
+/** Best current entitlement for display + management (account menu, settings). */
 export async function getEntitlement(userId: number | string | undefined | null): Promise<EntitlementSummary> {
-  const none: EntitlementSummary = { active: false, plan: null, status: null, currentEnd: null }
+  const none: EntitlementSummary = {
+    active: false, plan: null, status: null, currentEnd: null,
+    recurring: false, cancelScheduled: false, subscriptionId: null,
+  }
   if (userId === undefined || userId === null) return none
   const id = Number(userId)
   if (!Number.isFinite(id)) return none
 
   const { rows } = await db().query(
-    `SELECT plan, status, current_end
+    `SELECT plan, status, current_end, cancel_scheduled, razorpay_subscription_id
        FROM subscriptions
       WHERE user_id = $1
       ORDER BY (plan = 'lifetime') DESC, current_end DESC NULLS LAST, created_at DESC
@@ -55,5 +61,8 @@ export async function getEntitlement(userId: number | string | undefined | null)
     plan: r.plan,
     status: r.status,
     currentEnd: r.current_end ? new Date(r.current_end).toISOString() : null,
+    recurring: r.plan === 'monthly' || r.plan === 'annual',
+    cancelScheduled: !!r.cancel_scheduled,
+    subscriptionId: r.razorpay_subscription_id ?? null,
   }
 }

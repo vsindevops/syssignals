@@ -10,7 +10,10 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-17 (checkout-resume flow for logged-out users + Google
+> **Last updated:** 2026-06-19 (account **/settings**: editable profile —
+> name/role/bio/LinkedIn/X/GitHub on `users` — and a **Manage Membership** panel
+> with cancel-at-cycle-end via Razorpay; see §5/§8. (Re-landed cleanly after an
+> accidental revert.) Earlier: checkout-resume flow for logged-out users + Google
 > SSO provider added — see §8/§12. Earlier same day: PAYMENTS LIVE — Razorpay live keys + plans set in
 > Coolify; all 3 tiers verified creating real orders/subscriptions on prod; article
 > route now `force-dynamic` to fix a gated-page 500; annual cycles capped at 100.
@@ -274,6 +277,9 @@ src/
 | `/pricing/success` | Static (noindex) | post-purchase confirmation |
 | `/api/checkout`, `/api/checkout/verify` | Dynamic | start checkout (order/subscription) + verify signature |
 | `/api/webhooks/razorpay` | Dynamic | entitlement source of truth (HMAC-verified) |
+| `/settings` | Dynamic (auth-gated; redirects to `/login`) | profile form + Manage Membership panel |
+| `/api/profile` | Dynamic | save name/role/bio/socials (auth) |
+| `/api/membership/cancel` | Dynamic | cancel recurring sub at cycle end (auth) |
 | `/articles/[slug]/opengraph-image` | Dynamic (ƒ) | per-article OG card; **PUBLIC** (gate exempts it) |
 | `/series`, `/series/[slug]` | Static | curriculum |
 | `/login` | Dynamic | magic-link form |
@@ -379,7 +385,8 @@ Server sends static HTML; these client components progressively enhance it:
 **no migration/SQL file exists in the repo**):
 - Auth.js standard: `users`, `accounts`, `sessions`, `verification_token`.
 - Custom additions: table `progress(user_id, slug)`; column `users.last_read`.
-- **`subscriptions`** (paid access): `(id, user_id, plan, status, razorpay_subscription_id, razorpay_order_id, razorpay_payment_id, current_end, created_at, updated_at)`. `plan` ∈ monthly|annual|lifetime; `status` ∈ created|active|cancelled|halted|completed|paused. Read by `src/lib/entitlement.ts` (`userHasAccess` / `getEntitlement`): access = a lifetime row with status active, OR a recurring row active with `current_end` in the future. Webhook keeps it current.
+- **Profile columns on `users`**: `role`, `bio`, `linkedin`, `twitter`, `github` (plus existing `name`, `image`, `email`). Read/written via `src/lib/profile.ts` (`getProfile`/`updateProfile`/`sanitizeProfile` — trims, length-caps, strips leading `@` from socials).
+- **`subscriptions`** (paid access): `(id, user_id, plan, status, razorpay_subscription_id, razorpay_order_id, razorpay_payment_id, current_end, cancel_scheduled, created_at, updated_at)`. `plan` ∈ monthly|annual|lifetime; `status` ∈ created|active|cancelled|halted|completed|paused; `cancel_scheduled` = recurring plan set to end at period close. Read by `src/lib/entitlement.ts` (`userHasAccess` / `getEntitlement`): access = a lifetime row with status active, OR a recurring row active with `current_end` in the future. Webhook keeps it current.
 - Queried in `src/app/api/progress/route.ts` and `src/lib/db.ts`.
 
 **Progress model (`ProgressProvider` + `/api/progress`):**
@@ -586,6 +593,16 @@ newsletter list, or a bigger VPS for traffic/Postgres.
 ---
 
 ## 16. Change log (append new entries at top)
+
+- **2026-06-19** — **Account settings + membership management.** `/settings`
+  (auth-gated): editable **profile** (name, current role, bio, LinkedIn, X, GitHub —
+  columns on `users`; `src/lib/profile.ts`) and a **Manage Membership** panel (plan,
+  status, renewal/expiry; cancel recurring at cycle end → `cancelSubscription` +
+  `cancel_scheduled`; change-plan link; lifetime/free states). Routes `/api/profile`,
+  `/api/membership/cancel`. Account menu → "Settings & membership". NOTE: this feature
+  was briefly auto-shipped via a `git add -A` in the Python publish script and reverted
+  (commit `c81685e`); re-landed here intentionally. Publish script since hardened to
+  stage only Python content + `series.ts`.
 
 - **2026-06-17** — **Checkout resume + Google SSO.** Logged-out plan clicks now go
   to `/login?callbackUrl=/pricing?checkout=<plan>` (server 401-driven, not a flaky
