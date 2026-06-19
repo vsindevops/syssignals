@@ -37,7 +37,7 @@ export default function MembershipPanel({ ent }: { ent: EntitlementSummary }) {
       <div className="card p-6 md:p-8">
         <h2 className="font-display text-lg font-semibold text-ink">Membership</h2>
         <p className="mt-2 text-[14px] text-ink-mute">
-          You&apos;re on the free plan — the first 7 days of every series. Unlock everything with a membership.
+          You&apos;re on the free plan — all 30 days of DevOps, plus the first 4 days of every other series. Unlock everything with a membership.
         </p>
         <Link
           href="/pricing"

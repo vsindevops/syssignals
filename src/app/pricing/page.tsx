@@ -5,14 +5,14 @@ import PricingTiers from '@/components/pricing/PricingTiers'
 export const metadata: Metadata = {
   title: 'Membership',
   description:
-    'One membership unlocks every Systems & Signals series — all days, current and future. Monthly, annual, or lifetime. The first 7 days of each series are always free.',
+    'One membership unlocks every Systems & Signals series — all days, current and future. Monthly, annual, or lifetime. All 30 days of DevOps are free, and every other series is free for its first 4 days.',
   alternates: { canonical: '/pricing' },
 }
 
 const FAQ = [
   {
     q: 'What do I get?',
-    a: 'Full access to every day of every series — 30 Days of DevOps, Python for AI Engineering, and every series we ship in future. The first 7 days of each series stay free for everyone.',
+    a: 'Full access to every day of every series — 30 Days of DevOps, Python for AI Engineering, and every series we ship in future. The complete 30 Days of DevOps is free for everyone, and every other series stays free for its first 4 days.',
   },
   {
     q: 'Can I cancel?',
@@ -40,8 +40,9 @@ export default function PricingPage() {
               One membership. <span className="gradient-text">Everything.</span>
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[15.5px] leading-relaxed text-ink-dim">
-              Unlock every day of every series — current and future. The first 7 days of each
-              series are always free, so you can try before you subscribe.
+              Unlock every day of every series — current and future. All 30 days of DevOps are
+              free, and every other series is free for its first 4 days, so you can try before you
+              subscribe.
             </p>
           </div>
         </Reveal>

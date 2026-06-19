@@ -10,7 +10,10 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-19 (account **/settings**: editable profile —
+> **Last updated:** 2026-06-19 (SEO access change: **entire DevOps series is now
+> free/indexable** — `FULLY_OPEN_PREFIXES = { '' }` — and gated series drop to a
+> 4-day free preview (`FREE_PREVIEW_DAYS` 7→4); see §9/§15/§16. Earlier same day:
+> account **/settings**: editable profile —
 > name/role/bio/LinkedIn/X/GitHub on `users` — and a **Manage Membership** panel
 > with cancel-at-cycle-end via Razorpay; see §5/§8. (Re-landed cleanly after an
 > accidental revert.) Earlier: checkout-resume flow for logged-out users + Google
@@ -291,10 +294,11 @@ src/
 | `/api/subscribe` | Dynamic | newsletter |
 
 **Access model (no middleware — gating lives in the article page).** `src/lib/access.ts`
-decides free vs gated: `isFreeSlug(slug)` is true for days 1–`FREE_PREVIEW_DAYS`
-(currently **7**) of every series PLUS per-series `EXTRA_FREE_DAYS` (currently
-`{ '': [30] }` → DevOps Day 30). Slug parsed into `{prefix, day}` (`''`=DevOps,
-`'py-'`=Python). Used by the sitemap, article metadata, and the page.
+decides free vs gated: `isFreeSlug(slug)` is true when the slug's prefix is in
+`FULLY_OPEN_PREFIXES` (currently `{ '' }` → the **entire DevOps series is free**,
+all 30 days), OR for a gated series, days 1–`FREE_PREVIEW_DAYS` (currently **4**,
+e.g. Python `py-` days 1–4 free, gated from day 5). Slug parsed into `{prefix, day}`
+(`''`=DevOps, `'py-'`=Python). Used by the sitemap, article metadata, and the page.
 
 The **article page** (`src/app/articles/[slug]/page.tsx`) enforces access server-side:
 - **Free slug** → prerendered (SSG), full body, indexed. (`generateStaticParams` returns only free slugs.)
@@ -594,6 +598,19 @@ newsletter list, or a bigger VPS for traffic/Postgres.
 
 ## 16. Change log (append new entries at top)
 
+- **2026-06-19** — **SEO access model change (open all of DevOps; tighten the rest).**
+  `src/lib/access.ts` reworked: new `FULLY_OPEN_PREFIXES = Set{''}` makes the **entire
+  30-day DevOps series public + indexable** (previously only days 1–7 + Day 30);
+  `FREE_PREVIEW_DAYS` 7→4 so every *other* series (Python `py-`, future MLOps/AI Eng)
+  is free for days 1–4 and login/membership-gated from day 5. `EXTRA_FREE_DAYS`
+  removed (the DevOps Day 30 exception is subsumed by the fully-open rule). Because
+  `isFreeSlug` is the single source of truth, this cascades automatically: all 30
+  DevOps articles now enter the sitemap, drop their `noindex`, and emit Article +
+  Breadcrumb JSON-LD; their bodies render publicly. Updated user-facing "first 7 days"
+  copy in `Paywall.tsx`, `pricing/page.tsx`, `MembershipPanel.tsx`. Build verified
+  green. Rationale: DevOps is the finished flagship series and the strongest long-tail
+  search asset — opening it fully maximizes organic reach; newer series keep a 4-day
+  on-ramp to protect membership value. (Decision by Vishwas, SEO push week 1.)
 - **2026-06-19** — **Account settings + membership management.** `/settings`
   (auth-gated): editable **profile** (name, current role, bio, LinkedIn, X, GitHub —
   columns on `users`; `src/lib/profile.ts`) and a **Manage Membership** panel (plan,

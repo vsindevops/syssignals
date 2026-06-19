@@ -8,7 +8,8 @@
 > **Its machine twin.** There's a denser, fact-dump version of this for AI models:
 > [`SYSTEM_CONTEXT.md`](./SYSTEM_CONTEXT.md). When you change the site, update both.
 >
-> **Last updated:** 2026-06-14.
+> **Last updated:** 2026-06-19 (SEO: the whole DevOps series is now free/indexable;
+> other series free for their first 4 days, gated from day 5).
 
 ---
 
@@ -89,9 +90,10 @@ Follow a single click. Someone opens `https://syssignals.com/articles/day-24-...
    and forwards the request inward.
 3. The request reaches our **Next.js app** running in a container. The article page
    itself decides who gets to read:
-   - **The first 7 days of any series are free** — fully public, no login. This
-     gives newcomers (and Google) a generous on-ramp. (The DevOps Day 30 finale is
-     also free, as a payoff/teaser.)
+   - **The entire 30-day DevOps series is free** — fully public, no login. It's the
+     finished flagship and our strongest pull for Google searches, so every day is
+     open. **Every other series is free for its first 4 days** — a generous on-ramp
+     for newcomers (and crawlers) before the deeper days become members-only.
    - For the gated days, the server checks: *does this person have an active
      membership?* If yes → the full article. If no → a **paywall** with the
      membership options. The article text is never even sent to non-members.
@@ -239,7 +241,8 @@ invoice — confirm against the live account.)
 - Newsletter signup
 - Passwordless accounts (magic-link)
 - **Membership** — one plan unlocks every series (Monthly ₹399 / Annual ₹2,999 /
-  Lifetime ₹6,999), paid via Razorpay; the first 7 days of each series stay free.
+  Lifetime ₹6,999), paid via Razorpay; all of DevOps is free and every other series
+  is free for its first 4 days.
   Clicking a plan while logged out sends you to sign in (magic-link **or Google**),
   then drops you straight back into checkout — no second click needed
 - **Account settings** (`/settings`) — edit your profile (name, current role, bio,
@@ -375,8 +378,8 @@ npm run publish:day  # syncs, builds, commits, pushes → auto-deploys
 
 One membership unlocks **everything** — every day of every series, current and
 future. Three ways to pay: **Monthly (₹399)**, **Annual (₹2,999)**, or a one-time
-**Lifetime (₹6,999)**. The first 7 days of each series stay free forever, so people
-can try before they buy.
+**Lifetime (₹6,999)**. All 30 days of DevOps stay free forever, and every other
+series stays free for its first 4 days, so people can try before they buy.
 
 - **Payments run through Razorpay** (India-native: UPI, cards, netbanking). Monthly
   and Annual are *subscriptions* (auto-renew until cancelled); Lifetime is a single
@@ -400,13 +403,14 @@ To change prices, edit one file: `src/lib/pricing.ts`.
 
 ## 12. The honest trade-offs (so future-you isn't surprised)
 
-- **The first 7 days of each series are free (plus the DevOps Day 30 finale); day
-  8+ is members-only.** This is the balance between SEO/reach and earning: the free
-  days are public so Google can index them and newcomers can sample the work, while
-  the deeper days are the paid product. Two knobs in `src/lib/access.ts`:
-  `FREE_PREVIEW_DAYS` (how many opening days are free) and `EXTRA_FREE_DAYS` (extra
-  always-free days, e.g. the Day 30 capstone). Free days get indexed; gated ones
-  deliberately don't.
+- **All of DevOps is free; every other series is free for its first 4 days, then
+  members-only.** This is the balance between SEO/reach and earning: the finished
+  DevOps series is fully public so Google can index all 30 days and it acts as the
+  top-of-funnel magnet, while newer series give a 4-day sample before the deeper
+  days become the paid product. Two knobs in `src/lib/access.ts`:
+  `FULLY_OPEN_PREFIXES` (series that are entirely free — currently just DevOps) and
+  `FREE_PREVIEW_DAYS` (how many opening days are free for the gated series). Free
+  days get indexed; gated ones deliberately don't.
 - **The database schema isn't scripted in the repo.** The tables were created by
   hand on the server. If the database ever needs rebuilding, that schema has to be
   recreated (it's documented in `SYSTEM_CONTEXT.md` §8).

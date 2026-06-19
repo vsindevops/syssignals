@@ -33,7 +33,7 @@ export default function Paywall({
             Sign in to keep reading
           </h2>
           <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-ink-dim">
-            The first 7 days{seriesName ? ` of ${seriesName}` : ''} are open to everyone. Create a
+            The first 4 days{seriesName ? ` of ${seriesName}` : ''} are open to everyone. Create a
             free account to continue — it&apos;s a one-tap email link, no password.
           </p>
           <Link
@@ -64,7 +64,7 @@ export default function Paywall({
           This lesson is for members
         </h2>
         <p className="relative mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-ink-dim">
-          The first 7 days{seriesName ? ` of ${seriesName}` : ''} are free. Unlock the full
+          The first 4 days{seriesName ? ` of ${seriesName}` : ''} are free. Unlock the full
           curriculum — every day of every series, current and future — with one membership.
         </p>
 
