@@ -28,18 +28,32 @@ if ! grep -E "days: \[[0-9, ]*\b${newest}\b" src/lib/series.ts > /dev/null; then
   echo ""
 fi
 
-# Use porcelain (not `git diff`) so brand-new UNTRACKED articles count too —
-# a Python day often adds only a new file with no tracked-file changes.
-if [ -z "$(git status --porcelain)" ]; then
-  echo "==> nothing new to publish"
+# Only ever publish files this series owns: the Python content and (for module
+# slotting) src/lib/series.ts. NEVER `git add -A` — that once swept an unrelated
+# in-progress feature into a "Publish Day N" commit. Use porcelain so brand-new
+# UNTRACKED articles count too.
+OWNED=("$DIR" "src/lib/series.ts")
+
+if [ -z "$(git status --porcelain -- "${OWNED[@]}")" ]; then
+  echo "==> nothing new to publish in $DIR or src/lib/series.ts"
   exit 0
+fi
+
+# Warn about (but do NOT commit) any other changes sitting in the working tree.
+OTHER="$(git status --porcelain | grep -vE " (${DIR}|src/lib/series\.ts)" || true)"
+if [ -n "$OTHER" ]; then
+  echo ""
+  echo "    NOTE: these OTHER working-tree changes will be LEFT UNCOMMITTED"
+  echo "    (this script only publishes the Python content + series.ts):"
+  echo "$OTHER" | sed 's/^/      /'
+  echo ""
 fi
 
 echo "==> verifying production build"
 npm run build
 
-echo "==> committing and pushing"
-git add -A
+echo "==> committing and pushing (only Python content + series.ts)"
+git add -- "${OWNED[@]}"
 git commit -m "Publish Python for AI Engineering — Day ${newest}"
 git push
 

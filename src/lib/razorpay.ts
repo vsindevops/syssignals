@@ -37,16 +37,9 @@ export function createOrder(amount: number, notes: Record<string, string>) {
 export function createSubscription(planId: string, notes: Record<string, string>, totalCount = 120) {
   return rzp<{ id: string; status: string }>('/subscriptions', {
     plan_id: planId,
-    total_count: totalCount, // max billing cycles (Razorpay caps yearly at 100)
+    total_count: totalCount, // max billing cycles (10y monthly / 120y annual — effectively "until cancelled")
     customer_notify: 1,
     notes,
-  })
-}
-
-/** Cancel a subscription. Default: at the end of the paid cycle (keeps access). */
-export function cancelSubscription(subscriptionId: string, atCycleEnd = true) {
-  return rzp<{ id: string; status: string }>(`/subscriptions/${subscriptionId}/cancel`, {
-    cancel_at_cycle_end: atCycleEnd ? 1 : 0,
   })
 }
 

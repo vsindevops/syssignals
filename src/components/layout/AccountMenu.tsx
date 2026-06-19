@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
-import { LogOut, UserRound, BookOpenCheck, Settings } from 'lucide-react'
+import { LogOut, UserRound, BookOpenCheck } from 'lucide-react'
 import { useProgress } from '@/components/progress/ProgressProvider'
 
 export default function AccountMenu() {
@@ -73,14 +73,6 @@ export default function AccountMenu() {
           >
             <BookOpenCheck size={15} className="text-green" />
             {completed.length} day{completed.length === 1 ? '' : 's'} completed
-          </Link>
-          <Link
-            href="/settings"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] text-ink-dim transition-colors hover:bg-surface-3 hover:text-ink"
-          >
-            <Settings size={15} className="text-ink-mute" />
-            Settings &amp; membership
           </Link>
           <button
             onClick={handleSignOut}
