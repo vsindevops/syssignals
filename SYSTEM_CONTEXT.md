@@ -10,7 +10,9 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-19 (SEO access change: **entire DevOps series is now
+> **Last updated:** 2026-06-19 (**validation lockdown**: `ACCESS_ALLOWLIST` restricts
+> all gated articles to the owner email while content is reviewed — see §12/§16.
+> Earlier same day: SEO access change: **entire DevOps series is now
 > free/indexable** — `FULLY_OPEN_PREFIXES = { '' }` — and gated series drop to a
 > 4-day free preview (`FREE_PREVIEW_DAYS` 7→4); see §9/§15/§16. Earlier same day:
 > account **/settings**: editable profile —
@@ -502,6 +504,7 @@ block if forgotten).
 | `RAZORPAY_WEBHOOK_SECRET` | for payments | webhook route | HMAC-verifies `/api/webhooks/razorpay` |
 | `RAZORPAY_PLAN_MONTHLY` | for monthly plan | checkout | Razorpay Plan ID (recurring) |
 | `RAZORPAY_PLAN_ANNUAL` | for annual plan | checkout | Razorpay Plan ID (recurring) |
+| `ACCESS_ALLOWLIST` | optional | `access.ts`, article page | **Validation lockdown.** Comma-separated emails; when set, ONLY these users can read gated articles (paid entitlement ignored for everyone else). Unset = normal paid access. Currently: `systemsandsignals.tech@gmail.com`. |
 | `NEXT_TELEMETRY_DISABLED` | infra | Dockerfile | set to 1 |
 
 `.env.local` (gitignored) currently sets `DATABASE_URL`, `AUTH_SECRET`,
@@ -597,6 +600,16 @@ newsletter list, or a bigger VPS for traffic/Postgres.
 ---
 
 ## 16. Change log (append new entries at top)
+
+- **2026-06-19** — **Validation lockdown allowlist.** `ACCESS_ALLOWLIST` env (now
+  `systemsandsignals.tech@gmail.com`) restricts ALL gated-article access to the
+  listed emails — paid entitlement is ignored for everyone else (`access.ts`
+  `allowlistActive`/`emailAllowlisted`; checked first in the article-page gate).
+  Free articles (DevOps all + first 4 of other series) are unaffected. The owner
+  account also has a `lifetime/active` subscriptions row (so `/settings` shows
+  Lifetime). **To open paid access to everyone at real launch: clear/remove the
+  `ACCESS_ALLOWLIST` env var in Coolify and redeploy** — code path reverts to
+  normal `userHasAccess`.
 
 - **2026-06-19** — **SEO access model change (open all of DevOps; tighten the rest).**
   `src/lib/access.ts` reworked: new `FULLY_OPEN_PREFIXES = Set{''}` makes the **entire

@@ -37,3 +37,23 @@ export function isFreeSlug(slug: string): boolean {
   if (FULLY_OPEN_PREFIXES.has(p.prefix)) return true
   return p.day <= FREE_PREVIEW_DAYS
 }
+
+/**
+ * Validation lockdown. When `ACCESS_ALLOWLIST` is set (comma-separated emails),
+ * ONLY those users can read gated articles — normal paid entitlement is ignored
+ * for everyone else. Leave it unset for normal paid access. Reversible via env.
+ */
+export function accessAllowlist(): string[] {
+  return (process.env.ACCESS_ALLOWLIST ?? '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+export const allowlistActive = () => accessAllowlist().length > 0
+
+/** Is this email permitted to read gated content during a lockdown? */
+export function emailAllowlisted(email: string | null | undefined): boolean {
+  if (!email) return false
+  return accessAllowlist().includes(email.toLowerCase())
+}

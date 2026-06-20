@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CalendarDays, Clock, Layers } from 'lucide-react'
 import { getArticle, getAdjacent } from '@/lib/articles'
-import { isFreeSlug } from '@/lib/access'
+import { isFreeSlug, allowlistActive, emailAllowlisted } from '@/lib/access'
 import { auth } from '@/auth'
 import { userHasAccess } from '@/lib/entitlement'
 import { razorpayConfigured } from '@/lib/razorpay'
@@ -66,16 +66,20 @@ export default async function ArticlePage({ params }: Props) {
 
   const free = isFreeSlug(slug)
   const paymentsLive = razorpayConfigured()
+  const lockdown = allowlistActive()
 
-  // Entitlement for gated lessons. Before payments go live (no Razorpay keys),
-  // we preserve today's behaviour — any signed-in account unlocks Day 8+. Once
-  // payments are live, it requires an active plan.
+  // Entitlement for gated lessons:
+  //  - Validation lockdown (ACCESS_ALLOWLIST set): ONLY allowlisted emails get in,
+  //    paid entitlement is ignored for everyone else.
+  //  - Payments live: requires an active plan.
+  //  - Pre-launch (no Razorpay keys): any signed-in account unlocks.
   let entitled = free
   let signedIn = false
   if (!free) {
     const session = await auth()
     signedIn = !!session?.user?.id
-    if (!paymentsLive) entitled = signedIn
+    if (lockdown) entitled = signedIn && emailAllowlisted(session?.user?.email)
+    else if (!paymentsLive) entitled = signedIn
     else entitled = signedIn ? await userHasAccess(session!.user.id) : false
   }
 

@@ -411,6 +411,11 @@ To change prices, edit one file: `src/lib/pricing.ts`.
   `FULLY_OPEN_PREFIXES` (series that are entirely free — currently just DevOps) and
   `FREE_PREVIEW_DAYS` (how many opening days are free for the gated series). Free
   days get indexed; gated ones deliberately don't.
+- **Validation lockdown is ON right now.** While the content is being reviewed, an
+  allowlist (`ACCESS_ALLOWLIST` env = the owner's email) means *only that account*
+  can open gated articles — even a paying customer would be blocked. Free articles
+  are unaffected. To open paid access to everyone at real launch, clear that one env
+  var in Coolify and redeploy; the gate falls back to normal "active membership."
 - **The database schema isn't scripted in the repo.** The tables were created by
   hand on the server. If the database ever needs rebuilding, that schema has to be
   recreated (it's documented in `SYSTEM_CONTEXT.md` §8).
