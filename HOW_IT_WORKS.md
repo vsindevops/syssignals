@@ -8,8 +8,12 @@
 > **Its machine twin.** There's a denser, fact-dump version of this for AI models:
 > [`SYSTEM_CONTEXT.md`](./SYSTEM_CONTEXT.md). When you change the site, update both.
 >
-> **Last updated:** 2026-06-19 (SEO: the whole DevOps series is now free/indexable;
-> other series free for their first 4 days, gated from day 5).
+> **Last updated:** 2026-07-03 (launched a third series, **100 Days of MLOps** —
+> written directly in the site like the Python series, published with
+> `npm run publish:ml`, and free for its first **15** days. The "how many days are
+> free" number is now set per-series, so MLOps can be more generous than Python
+> without changing anything else. Day 1 is live. Earlier — SEO: the whole DevOps
+> series is free/indexable; other series free for their first 4 days.)
 
 ---
 
@@ -65,7 +69,7 @@ into the website repo whenever you publish. You never hand-edit the copies — y
 edit the original and re-run the copy. (The copies live in `content/` and are
 treated as "generated", like a build output.)
 
-**The second series does it more simply.** Starting with *Python for AI
+**The later series do it more simply.** Starting with *Python for AI
 Engineering* (2026-06-16), we learned the lesson from series 1: that two-repo
 copy step caused most of the small bugs (template markers showing up as literal
 text, a stray old site rebuilding and emailing failures). So the Python articles
@@ -75,6 +79,16 @@ you edit the file that ships. The website already knew how to read any article
 in `content/`, so nothing else had to change. (The finished example programs for
 each Python day are kept in a separate `~/syssignals/Python-for-AI-Engineering/`
 folder, only so each one can be *run and checked* before it goes into the article.)
+
+**The third series, *100 Days of MLOps* (2026-07-03), follows the exact same
+recipe.** Articles live directly under `content/mlops/100-days-mlops/`, are
+published with their own one-command script (`npm run publish:ml`), and their
+runnable example code sits in the sibling `~/syssignals/100-days-mlops/` folder so
+every command is actually run before it's written up. It's a beginner-first,
+100%-local course (no cloud, no bills) that's free for its first 15 days — a
+bigger free sample than Python, because it's our longest flagship and we want
+newcomers (and Google) to see plenty before the paywall. That "15" is just a
+setting we can dial per series.
 
 ---
 
@@ -403,14 +417,15 @@ To change prices, edit one file: `src/lib/pricing.ts`.
 
 ## 12. The honest trade-offs (so future-you isn't surprised)
 
-- **All of DevOps is free; every other series is free for its first 4 days, then
+- **All of DevOps is free; every other series is free for its first few days, then
   members-only.** This is the balance between SEO/reach and earning: the finished
   DevOps series is fully public so Google can index all 30 days and it acts as the
-  top-of-funnel magnet, while newer series give a 4-day sample before the deeper
+  top-of-funnel magnet, while newer series give a free sample before the deeper
   days become the paid product. Two knobs in `src/lib/access.ts`:
   `FULLY_OPEN_PREFIXES` (series that are entirely free — currently just DevOps) and
-  `FREE_PREVIEW_DAYS` (how many opening days are free for the gated series). Free
-  days get indexed; gated ones deliberately don't.
+  `FREE_PREVIEW_DAYS_BY_PREFIX` (how many opening days are free, **set per series** —
+  Python `py-` = 4, MLOps `ml-` = 15, with a default of 4). Free days get indexed;
+  gated ones deliberately don't.
 - **Validation lockdown is ON right now.** While the content is being reviewed, an
   allowlist (`ACCESS_ALLOWLIST` env = the owner's email) means *only that account*
   can open gated articles — even a paying customer would be blocked. Free articles

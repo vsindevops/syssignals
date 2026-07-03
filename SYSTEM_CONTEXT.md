@@ -10,7 +10,15 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-06-19 (**validation lockdown**: `ACCESS_ALLOWLIST` restricts
+> **Last updated:** 2026-07-03 (**third series launched: 100 Days of MLOps** — a new
+> live `seriesSlug: '100-days-mlops'` in `src/lib/series.ts` (10 modules, 100 days,
+> `topics`/level set), content authored directly under
+> `content/mlops/100-days-mlops/ml-day-NN-slug.md` (no Jekyll/sync, same model as
+> Python), a dedicated `npm run publish:ml` (`scripts/publish-mlops-day.sh`), and a
+> **per-series** free-preview: `access.ts` replaces the single `FREE_PREVIEW_DAYS`
+> const with `FREE_PREVIEW_DAYS_BY_PREFIX` (`py-`=4, `ml-`=15) + `freePreviewDays()`
+> helper + `DEFAULT_FREE_PREVIEW_DAYS`=4 — so MLOps is free days 1–15, Python
+> unchanged. Day 1 published. See §9/§15/§16. Earlier: **validation lockdown**: `ACCESS_ALLOWLIST` restricts
 > all gated articles to the owner email while content is reviewed — see §12/§16.
 > Earlier same day: SEO access change: **entire DevOps series is now
 > free/indexable** — `FULLY_OPEN_PREFIXES = { '' }` — and gated series drop to a
@@ -298,9 +306,12 @@ src/
 **Access model (no middleware — gating lives in the article page).** `src/lib/access.ts`
 decides free vs gated: `isFreeSlug(slug)` is true when the slug's prefix is in
 `FULLY_OPEN_PREFIXES` (currently `{ '' }` → the **entire DevOps series is free**,
-all 30 days), OR for a gated series, days 1–`FREE_PREVIEW_DAYS` (currently **4**,
-e.g. Python `py-` days 1–4 free, gated from day 5). Slug parsed into `{prefix, day}`
-(`''`=DevOps, `'py-'`=Python). Used by the sitemap, article metadata, and the page.
+all 30 days), OR for a gated series, days 1–`freePreviewDays(prefix)`. The free
+count is **per-series**: `FREE_PREVIEW_DAYS_BY_PREFIX` maps `py-`→4 and `ml-`→15,
+falling back to `DEFAULT_FREE_PREVIEW_DAYS` (4) for any unlisted gated prefix — so
+Python `py-` is free days 1–4 (gated from 5) and MLOps `ml-` is free days 1–15
+(gated from 16). Slug parsed into `{prefix, day}` (`''`=DevOps, `'py-'`=Python,
+`'ml-'`=MLOps). Used by the sitemap, article metadata, and the page.
 
 The **article page** (`src/app/articles/[slug]/page.tsx`) enforces access server-side:
 - **Free slug** → prerendered (SSG), full body, indexed. (`generateStaticParams` returns only free slugs.)
@@ -600,6 +611,27 @@ newsletter list, or a bigger VPS for traffic/Postgres.
 ---
 
 ## 16. Change log (append new entries at top)
+
+- **2026-07-03** — **Third series launched: 100 Days of MLOps.** New live entry
+  `'100-days-mlops'` in `src/lib/series.ts` SERIES (name "100 Days of MLOps",
+  `total: 100`, `level` "Absolute Beginner → MLOps Engineer", 10 modules of 10 days
+  each + 100 `upcoming` titles); the old "30 Days of MLOps" stub removed from
+  `PLANNED_SERIES` (only "AI Engineering Projects" remains planned). Content is
+  authored **directly** in `content/mlops/100-days-mlops/ml-day-NN-slug.md` (no
+  Jekyll, no sync — same model as Python; `articles.ts` already walks `content/**`).
+  Publishing via new `scripts/publish-mlops-day.sh` + `npm run publish:ml`
+  (build-gate → scoped commit of the MLOps content + `series.ts` only → push →
+  Coolify; cloned from the hardened Python publisher, never `git add -A`).
+  **Access model made per-series:** `access.ts` replaced the single
+  `FREE_PREVIEW_DAYS = 4` const with `DEFAULT_FREE_PREVIEW_DAYS = 4` +
+  `FREE_PREVIEW_DAYS_BY_PREFIX = { 'py-': 4, 'ml-': 15 }` + a `freePreviewDays(prefix)`
+  helper; `isFreeSlug` now calls `freePreviewDays(p.prefix)`. Net: MLOps is free/
+  indexable for days 1–15 (gated from 16), Python unchanged at 1–4, DevOps still
+  fully open. **Day 1 published** ("What is MLOps, and Setting Up Your Machine on
+  Any OS" — cross-OS install of Python/Git/VS Code/Docker + an env-check project;
+  100% local, no cloud). Runnable solution code lives in the sibling repo
+  `~/syssignals/100-days-mlops/day-NN/`. Build green; article + `/series/100-days-mlops`
+  (1/100) render-verified on a local dev server (Mermaid draws, 200, body served).
 
 - **2026-06-19** — **Validation lockdown allowlist.** `ACCESS_ALLOWLIST` env (now
   `systemsandsignals.tech@gmail.com`) restricts ALL gated-article access to the

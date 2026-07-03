@@ -17,9 +17,25 @@ export const FULLY_OPEN_PREFIXES: ReadonlySet<string> = new Set([''])
 /**
  * First N days of a *gated* series are free (the SEO on-ramp); from day N+1 the
  * lesson is login/membership-gated. Applies to every series except the fully
- * open ones above — e.g. Python (`py-`) is free for days 1–4, gated from day 5.
+ * open ones above.
+ *
+ * The count is PER-SERIES, keyed by slug prefix, so a long flagship series can
+ * offer a bigger free on-ramp without changing the others:
+ *   - `py-` (Python for AI Engineering) → 4 free (days 1–4)
+ *   - `ml-` (100 Days of MLOps)         → 15 free (days 1–15)
+ * Any gated prefix not listed falls back to `DEFAULT_FREE_PREVIEW_DAYS`.
  */
-export const FREE_PREVIEW_DAYS = 4
+export const DEFAULT_FREE_PREVIEW_DAYS = 4
+
+export const FREE_PREVIEW_DAYS_BY_PREFIX: Readonly<Record<string, number>> = {
+  'py-': 4,
+  'ml-': 15,
+}
+
+/** Number of free preview days for a given slug prefix. */
+export function freePreviewDays(prefix: string): number {
+  return FREE_PREVIEW_DAYS_BY_PREFIX[prefix] ?? DEFAULT_FREE_PREVIEW_DAYS
+}
 
 /**
  * `{ prefix, day }` from a slug, or null if it isn't day-numbered.
@@ -35,7 +51,7 @@ export function isFreeSlug(slug: string): boolean {
   const p = parseDaySlug(slug)
   if (!p) return false
   if (FULLY_OPEN_PREFIXES.has(p.prefix)) return true
-  return p.day <= FREE_PREVIEW_DAYS
+  return p.day <= freePreviewDays(p.prefix)
 }
 
 /**
