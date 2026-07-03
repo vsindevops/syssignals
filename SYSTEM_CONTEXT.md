@@ -10,7 +10,10 @@
 > or external service, update the relevant section here (and its human-facing twin
 > `HOW_IT_WORKS.md`). Sections are labelled so edits are easy to locate.
 >
-> **Last updated:** 2026-07-03 (**third series launched: 100 Days of MLOps** — a new
+> **Last updated:** 2026-07-03 (**auto email-on-publish** via Resend Broadcasts
+> (`scripts/announce-article.mjs`, wired into all publish scripts) + removed the
+> "stay tuned in" label from the homepage newsletter block — see §9/§16. Earlier:
+> **third series launched: 100 Days of MLOps** — a new
 > live `seriesSlug: '100-days-mlops'` in `src/lib/series.ts` (10 modules, 100 days,
 > `topics`/level set), content authored directly under
 > `content/mlops/100-days-mlops/ml-day-NN-slug.md` (no Jekyll/sync, same model as
@@ -449,7 +452,15 @@ Server sends static HTML; these client components progressively enhance it:
 - **Newsletter:** `/api/subscribe`; provider chosen by env — **Buttondown**
   (`BUTTONDOWN_API_KEY`) **or** **Resend audience** (`RESEND_API_KEY` +
   `RESEND_AUDIENCE_ID`). Honeypot field (`website`). Unconfigured → 503 + UI
-  fallback ("signups open soon").
+  fallback ("signups open soon"). Signup section lives on the homepage + article
+  footers (`NewsletterForm`).
+- **Announce-on-publish:** `scripts/announce-article.mjs` (`npm run announce`) sends
+  a **Resend Broadcast** to the audience for an article (newest by date, or a passed
+  slug). Wired as the final step of all three publish scripts with `--send --wait`
+  (`--wait` polls the live URL until the article is deployed, so the email link never
+  404s; publish scripts exit early when there's no new article, so re-runs don't
+  re-email). Dry-run by default without `--send`. From `hello@syssignals.com`,
+  includes the Resend unsubscribe token.
 
 ---
 
@@ -611,6 +622,15 @@ newsletter list, or a bigger VPS for traffic/Postgres.
 ---
 
 ## 16. Change log (append new entries at top)
+
+- **2026-07-03** — **Auto email-on-publish.** New `scripts/announce-article.mjs`
+  (`npm run announce`) sends a **Resend Broadcast** to the audience about an article
+  (newest by date or a passed slug), from `hello@syssignals.com` with a branded
+  template + unsubscribe token. Wired as the last step of all three publish scripts
+  (`--send --wait`; `--wait` polls the live URL so the link isn't dead; dry-run
+  without `--send`). Verified end-to-end (broadcast reached `sent`). Also removed the
+  "stay tuned in" kicker from the homepage newsletter section. Newsletter signup +
+  Resend audience were already live; this adds the outbound announcement.
 
 - **2026-07-03** — **Third series launched: 100 Days of MLOps.** New live entry
   `'100-days-mlops'` in `src/lib/series.ts` SERIES (name "100 Days of MLOps",

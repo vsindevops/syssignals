@@ -36,3 +36,6 @@ git commit -m "Publish Day ${newest}"
 git push
 
 echo "==> pushed — Coolify will deploy syssignals.com from this commit"
+
+echo "==> emailing subscribers once the article is live"
+node scripts/announce-article.mjs --send --wait || echo "    (announcement skipped/failed — run 'npm run announce -- <slug> --send' manually)"

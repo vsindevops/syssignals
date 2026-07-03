@@ -175,8 +175,7 @@ export default function HomePage() {
               className="pointer-events-none absolute right-[-120px] top-[-120px] h-72 w-72 rounded-full blur-[110px]"
               style={{ background: 'radial-gradient(closest-side, rgba(34,211,238,0.16), transparent)' }}
             />
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">stay tuned in</p>
-            <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">
+            <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">
               One email when a new day ships
             </h2>
             <p className="mx-auto mt-3 max-w-md text-[14.5px] text-ink-dim">

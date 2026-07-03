@@ -10,7 +10,8 @@
     "sync": "node scripts/sync-content.mjs",
     "publish:day": "bash scripts/publish-day.sh",
     "publish:py": "bash scripts/publish-python-day.sh",
-    "publish:ml": "bash scripts/publish-mlops-day.sh"
+    "publish:ml": "bash scripts/publish-mlops-day.sh",
+    "announce": "node scripts/announce-article.mjs"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.2",

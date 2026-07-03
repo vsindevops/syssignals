@@ -292,7 +292,11 @@ from nothing. We did it in roughly this sequence:
 6. **Verify it actually works** by running it in a real browser and screenshotting.
 7. **Make it findable & shareable.** Generated OG share images, RSS, sitemap,
    structured data; wired analytics; added a newsletter signup. Later did a
-   dedicated **technical-SEO pass** (see the box below).
+   dedicated **technical-SEO pass** (see the box below). Publishing an article now
+   also **emails the newsletter list automatically** — the publish command waits
+   until the new article is actually live, then sends a Resend broadcast with the
+   title, summary and a link (and an unsubscribe option). Re-running publish with no
+   new article sends nothing, so there's no accidental double-send.
 8. **Ship it.** Containerised with Docker, rented the VPS, installed Coolify,
    deployed, pointed the domain via Cloudflare, got HTTPS certificates.
 9. **Automate publishing.** One-command publish with a build gate, plus auto-deploy
