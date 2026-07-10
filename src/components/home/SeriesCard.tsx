@@ -17,10 +17,11 @@ export interface SeriesCardData {
 /** Compact series card for the homepage grid (progress-aware). */
 export function SeriesCard({ data, flagship = false }: { data: SeriesCardData; flagship?: boolean }) {
   const { completed, hydrated } = useProgress()
-  const published = data.publishedSlugs.length
+  // The bar always reflects *your* completion of the series, never how much is
+  // published — so it's empty until you finish lessons, and consistent across cards.
   const done = hydrated ? data.publishedSlugs.filter(s => completed.includes(s)).length : 0
   const pct = data.total > 0 ? Math.round((done / data.total) * 100) : 0
-  const publishedPct = data.total > 0 ? Math.round((published / data.total) * 100) : 0
+  const started = hydrated && done > 0
 
   return (
     <Link href={`/series/${data.slug}`} className="card card-hover group flex h-full flex-col p-7">
@@ -41,22 +42,18 @@ export function SeriesCard({ data, flagship = false }: { data: SeriesCardData; f
         {data.topics.length > 5 && <span className="chip">+{data.topics.length - 5}</span>}
       </div>
 
-      {/* progress / publish bar */}
+      {/* your completion of the series */}
       <div className="mt-5">
         <div className="flex items-center justify-between font-mono text-[11px] text-ink-mute">
-          <span>
-            {hydrated && done > 0
-              ? `${done}/${data.total} complete`
-              : `${published}/${data.total} published`}
-          </span>
+          <span>{done}/{data.total} completed</span>
           <span className="inline-flex items-center gap-1 text-ink-dim transition-colors group-hover:text-accent">
-            {hydrated && done > 0 ? 'Continue' : 'Start'} <ArrowRight size={12} />
+            {started ? 'Continue' : 'Start'} <ArrowRight size={12} />
           </span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3">
           <div
             className="h-full rounded-full bg-gradient-to-r from-accent to-accent-2 transition-[width] duration-700"
-            style={{ width: `${hydrated && done > 0 ? pct : publishedPct}%` }}
+            style={{ width: `${pct}%` }}
           />
         </div>
       </div>
